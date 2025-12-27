@@ -1,0 +1,50 @@
+.home-page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.posts-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading-posts {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.no-posts {
+  background-color: var(--fb-card-bg);
+  border-radius: var(--fb-border-radius);
+  padding: 40px;
+  text-align: center;
+  box-shadow: var(--fb-shadow);
+}
+
+.no-posts h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.no-posts p {
+  color: var(--fb-text-secondary);
+}
+
+.load-more-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--fb-card-bg);
+  border: none;
+  border-radius: var(--fb-border-radius);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fb-blue);
+  cursor: pointer;
+  box-shadow: var(--fb-shadow);
+}
+
+.load-more-btn:hover {
+  background-color: var(--fb-gray-light);
+}

@@ -1,0 +1,209 @@
+.notifications-page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.notifications-container {
+  padding: 0;
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--fb-divider);
+}
+
+.notifications-header h1 {
+  font-size: 24px;
+}
+
+.mark-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background-color: var(--fb-gray-light);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.mark-all-btn:hover {
+  background-color: var(--fb-gray-medium);
+}
+
+.notifications-filters {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--fb-divider);
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--fb-text-secondary);
+}
+
+.filter-btn:hover {
+  background-color: var(--fb-gray-light);
+}
+
+.filter-btn.active {
+  background-color: #e7f3ff;
+  color: var(--fb-blue);
+}
+
+.notifications-list {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  cursor: pointer;
+  position: relative;
+}
+
+.notification-item:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.notification-item.unread {
+  background-color: #e7f3ff;
+}
+
+.notification-item.unread:hover {
+  background-color: #d6e9fc;
+}
+
+.notification-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.notification-avatar img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.notif-icon {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  border: 2px solid white;
+}
+
+.notif-icon.like {
+  background-color: var(--fb-blue);
+}
+
+.notif-icon.comment {
+  background-color: #44bd32;
+}
+
+.notif-icon.friend {
+  background-color: var(--fb-blue);
+}
+
+.notif-icon.group {
+  background-color: #1877f2;
+}
+
+.notif-icon.event {
+  background-color: var(--fb-red);
+}
+
+.notif-icon.marketplace {
+  background-color: #00a400;
+}
+
+.notif-icon.default {
+  background-color: var(--fb-gray-medium);
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-content p {
+  font-size: 15px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.notification-time {
+  font-size: 13px;
+  color: var(--fb-text-secondary);
+}
+
+.notification-item.unread .notification-time {
+  color: var(--fb-blue);
+  font-weight: 600;
+}
+
+.notification-menu {
+  padding: 8px;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--fb-text-secondary);
+  opacity: 0;
+}
+
+.notification-item:hover .notification-menu {
+  opacity: 1;
+}
+
+.notification-menu:hover {
+  background-color: var(--fb-gray-light);
+}
+
+.unread-dot {
+  width: 12px;
+  height: 12px;
+  background-color: var(--fb-blue);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: var(--fb-gray-medium);
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: var(--fb-text-secondary);
+}

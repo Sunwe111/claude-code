@@ -1,0 +1,267 @@
+.settings-page {
+  display: flex;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.settings-sidebar {
+  width: 360px;
+  padding: 16px;
+  position: sticky;
+  top: 72px;
+  height: fit-content;
+}
+
+.settings-sidebar h1 {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.settings-nav .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  text-align: left;
+}
+
+.settings-nav .nav-item:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.settings-nav .nav-item.active {
+  background-color: #e7f3ff;
+  color: var(--fb-blue);
+}
+
+.settings-nav .nav-item svg {
+  font-size: 20px;
+}
+
+.settings-nav .nav-item .chevron {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--fb-text-secondary);
+}
+
+.settings-actions {
+  border-top: 1px solid var(--fb-divider);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  text-align: left;
+}
+
+.action-item:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.action-item.logout {
+  color: var(--fb-blue);
+}
+
+.action-item.delete {
+  color: var(--fb-red);
+}
+
+.settings-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.settings-section {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.settings-section h2 {
+  font-size: 20px;
+  margin-bottom: 24px;
+}
+
+.settings-section h3 {
+  font-size: 17px;
+  margin: 24px 0 16px;
+}
+
+.settings-section h3:first-of-type {
+  margin-top: 0;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--fb-divider);
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--fb-blue);
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.form-group.checkbox input {
+  width: 18px;
+  height: 18px;
+}
+
+.notification-group {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--fb-divider);
+}
+
+.notification-group:last-of-type {
+  border-bottom: none;
+}
+
+.theme-options {
+  display: flex;
+  gap: 16px;
+}
+
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid var(--fb-divider);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+
+.theme-option.active {
+  border-color: var(--fb-blue);
+}
+
+.theme-preview {
+  width: 80px;
+  height: 50px;
+  border-radius: 4px;
+}
+
+.theme-preview.light {
+  background: linear-gradient(to bottom, #f0f2f5 50%, white 50%);
+  border: 1px solid var(--fb-divider);
+}
+
+.theme-preview.dark {
+  background: linear-gradient(to bottom, #18191a 50%, #242526 50%);
+}
+
+.theme-preview.system {
+  background: linear-gradient(to right, #f0f2f5 50%, #18191a 50%);
+  border: 1px solid var(--fb-divider);
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--fb-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #166fe5;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .settings-page {
+    flex-direction: column;
+  }
+
+  .settings-sidebar {
+    width: 100%;
+    position: static;
+  }
+}

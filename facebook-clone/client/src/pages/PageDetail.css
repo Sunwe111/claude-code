@@ -1,0 +1,167 @@
+.page-detail {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-header {
+  background-color: var(--fb-card-bg);
+  box-shadow: var(--fb-shadow);
+  margin-bottom: 16px;
+}
+
+.page-cover {
+  height: 350px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  overflow: hidden;
+}
+
+.page-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.page-header-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 24px 24px;
+}
+
+.page-profile {
+  width: 168px;
+  height: 168px;
+  border-radius: 8px;
+  border: 4px solid white;
+  margin-top: -84px;
+  object-fit: cover;
+  background-color: white;
+}
+
+.page-header-info {
+  flex: 1;
+  padding-top: 8px;
+}
+
+.page-header-info h1 {
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verified-badge {
+  color: var(--fb-blue);
+  font-size: 20px;
+}
+
+.page-category {
+  color: var(--fb-text-secondary);
+  margin-bottom: 4px;
+}
+
+.page-stats {
+  color: var(--fb-text-secondary);
+}
+
+.page-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #f7b928;
+  margin-top: 4px;
+}
+
+.page-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+.page-actions .btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-content {
+  display: flex;
+  gap: 16px;
+}
+
+.page-main {
+  flex: 1;
+}
+
+.page-tabs {
+  display: flex;
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.page-tabs .tab {
+  padding: 16px 20px;
+  border: none;
+  background: none;
+  font-weight: 600;
+  color: var(--fb-text-secondary);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+
+.page-tabs .tab.active {
+  color: var(--fb-blue);
+  border-bottom-color: var(--fb-blue);
+}
+
+.page-sidebar {
+  width: 340px;
+}
+
+.page-about-card {
+  padding: 16px;
+  position: sticky;
+  top: 72px;
+}
+
+.page-about-card h3 {
+  margin-bottom: 12px;
+}
+
+.about-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--fb-text-secondary);
+}
+
+.about-item a {
+  color: var(--fb-blue);
+}
+
+.no-posts {
+  text-align: center;
+  padding: 40px;
+  color: var(--fb-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .page-content {
+    flex-direction: column;
+  }
+
+  .page-sidebar {
+    width: 100%;
+  }
+
+  .page-header-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .page-profile {
+    margin-top: -60px;
+  }
+}

@@ -1,0 +1,12 @@
+.loading-screen {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--fb-gray-bg);
+}
+
+.loading-screen .spinner {
+  width: 48px;
+  height: 48px;
+}

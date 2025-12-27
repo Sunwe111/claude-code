@@ -1,0 +1,157 @@
+.friends-page {
+  display: flex;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.friends-sidebar {
+  width: 360px;
+  padding: 16px;
+  position: sticky;
+  top: 72px;
+  height: fit-content;
+  flex-shrink: 0;
+}
+
+.friends-sidebar h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.friends-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.friends-nav .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.friends-nav .nav-item:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.friends-nav .nav-item.active {
+  background-color: #e7f3ff;
+  color: var(--fb-blue);
+}
+
+.friends-nav .nav-item svg {
+  font-size: 20px;
+}
+
+.friends-content {
+  flex: 1;
+}
+
+.friends-content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.friend-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.friend-avatar {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.friend-info {
+  flex: 1;
+  margin-bottom: 12px;
+}
+
+.friend-name {
+  font-weight: 600;
+  font-size: 17px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.friend-name:hover {
+  text-decoration: underline;
+}
+
+.mutual-friends {
+  font-size: 13px;
+  color: var(--fb-text-secondary);
+}
+
+.friend-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.friend-actions .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: var(--fb-gray-medium);
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .friends-page {
+    flex-direction: column;
+  }
+
+  .friends-sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .friends-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .friends-nav .nav-item {
+    white-space: nowrap;
+  }
+}

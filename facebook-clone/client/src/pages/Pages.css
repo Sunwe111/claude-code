@@ -1,0 +1,138 @@
+.pages-page {
+  display: flex;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pages-sidebar {
+  width: 360px;
+  padding: 16px;
+  position: sticky;
+  top: 72px;
+  height: fit-content;
+}
+
+.pages-sidebar h1 {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.pages-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.pages-nav .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.pages-nav .nav-item:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.pages-nav .nav-item.active {
+  background-color: #e7f3ff;
+  color: var(--fb-blue);
+}
+
+.pages-content {
+  flex: 1;
+}
+
+.pages-content h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.pages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.page-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+}
+
+.page-card:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.page-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.page-info {
+  flex: 1;
+}
+
+.page-info h3 {
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.verified {
+  color: var(--fb-blue);
+  font-size: 14px;
+}
+
+.page-category {
+  font-size: 14px;
+  color: var(--fb-text-secondary);
+  margin-bottom: 4px;
+}
+
+.page-followers {
+  font-size: 14px;
+  color: var(--fb-text-secondary);
+}
+
+.page-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #f7b928;
+  margin-top: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: var(--fb-gray-medium);
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .pages-page {
+    flex-direction: column;
+  }
+
+  .pages-sidebar {
+    width: 100%;
+    position: static;
+  }
+}
