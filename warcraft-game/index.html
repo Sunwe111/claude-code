@@ -395,81 +395,6 @@ const CONFIG = {
 };
 
 // ============================================
-// SOUND SYSTEM (Web Audio API)
-// ============================================
-class SoundSystem {
-    constructor() {
-        this.ctx = null;
-        this.enabled = true;
-        this.sounds = {};
-        this.init();
-    }
-
-    init() {
-        try {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            this.createSounds();
-        } catch(e) {
-            console.log('Audio not supported');
-        }
-    }
-
-    resume() {
-        if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
-    }
-
-    createSounds() {
-        // Pre-generate sound parameters
-        this.sounds = {
-            select: { freq: 600, duration: 0.1, type: 'square' },
-            move: { freq: 400, duration: 0.08, type: 'sine' },
-            attack: { freq: 150, duration: 0.15, type: 'sawtooth' },
-            build: { freq: 300, duration: 0.2, type: 'triangle' },
-            harvest: { freq: 500, duration: 0.1, type: 'sine' },
-            complete: { freq: [400, 600, 800], duration: 0.3, type: 'square' },
-            error: { freq: 200, duration: 0.3, type: 'sawtooth' },
-            death: { freq: 100, duration: 0.4, type: 'sawtooth' },
-        };
-    }
-
-    play(soundName) {
-        if (!this.enabled || !this.ctx) return;
-        this.resume();
-
-        const sound = this.sounds[soundName];
-        if (!sound) return;
-
-        const oscillator = this.ctx.createOscillator();
-        const gainNode = this.ctx.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.ctx.destination);
-
-        oscillator.type = sound.type;
-
-        if (Array.isArray(sound.freq)) {
-            // Melody
-            const now = this.ctx.currentTime;
-            sound.freq.forEach((f, i) => {
-                oscillator.frequency.setValueAtTime(f, now + i * 0.1);
-            });
-        } else {
-            oscillator.frequency.value = sound.freq;
-        }
-
-        gainNode.gain.setValueAtTime(0.2, this.ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + sound.duration);
-
-        oscillator.start(this.ctx.currentTime);
-        oscillator.stop(this.ctx.currentTime + sound.duration);
-    }
-}
-
-const sound = new SoundSystem();
-
-// ============================================
 // A* PATHFINDING
 // ============================================
 class Pathfinding {
@@ -528,7 +453,7 @@ class Pathfinding {
         fScore.set(key(start), this.heuristic(start, end));
 
         let iterations = 0;
-        const maxIterations = 1000;
+        const maxIterations = 2000;
 
         while (openSet.length > 0 && iterations < maxIterations) {
             iterations++;
@@ -553,9 +478,13 @@ class Pathfinding {
             for (const neighbor of this.getNeighbors(current)) {
                 if (closedSet.has(key(neighbor))) continue;
 
-                const tentativeG = (gScore.get(key(current)) || 0) + 1;
+                // Diagonal movement costs more
+                const isDiagonal = neighbor.x !== current.x && neighbor.y !== current.y;
+                const moveCost = isDiagonal ? 1.4 : 1;
+                const tentativeG = (gScore.get(key(current)) || 0) + moveCost;
 
-                if (!openSet.find(n => n.x === neighbor.x && n.y === neighbor.y)) {
+                const existingIdx = openSet.findIndex(n => n.x === neighbor.x && n.y === neighbor.y);
+                if (existingIdx === -1) {
                     openSet.push(neighbor);
                 } else if (tentativeG >= (gScore.get(key(neighbor)) || Infinity)) {
                     continue;
@@ -567,11 +496,28 @@ class Pathfinding {
             }
         }
 
-        return [];
+        // If no path found, try simple direct path
+        return this.simplePath(startX, startY, endX, endY);
+    }
+
+    simplePath(startX, startY, endX, endY) {
+        // Return a simple direct path as fallback
+        const path = [];
+        const steps = Math.max(Math.abs(endX - startX), Math.abs(endY - startY));
+        if (steps === 0) return [];
+
+        for (let i = 1; i <= steps; i++) {
+            const t = i / steps;
+            path.push({
+                x: startX + (endX - startX) * t,
+                y: startY + (endY - startY) * t
+            });
+        }
+        return path;
     }
 
     findNearestWalkable(x, y) {
-        for (let r = 1; r < 10; r++) {
+        for (let r = 1; r < 15; r++) {
             for (let dx = -r; dx <= r; dx++) {
                 for (let dy = -r; dy <= r; dy++) {
                     const nx = x + dx;
@@ -686,7 +632,6 @@ class SpriteRenderer {
             ctx.fillRect(17, 6, 2, 2);
             // Bow
             ctx.fillStyle = '#8b4513';
-            ctx.arc(24, 16, 8, -Math.PI/2, Math.PI/2);
             ctx.fillRect(22, 8, 2, 16);
         });
 
@@ -775,6 +720,23 @@ class SpriteRenderer {
             ctx.fillRect(0, 16, 64, 12);
             // Weapons rack
             ctx.fillStyle = '#c0c0c0';
+            ctx.fillRect(8, 28, 12, 20);
+            ctx.fillRect(44, 28, 12, 20);
+        });
+
+        // Enemy Barracks
+        this.sprites.enemyBarracks = this.createSprite(64, 64, (ctx) => {
+            // Base
+            ctx.fillStyle = '#4a0000';
+            ctx.fillRect(4, 24, 56, 36);
+            // Door
+            ctx.fillStyle = '#2f0000';
+            ctx.fillRect(24, 40, 16, 20);
+            // Roof
+            ctx.fillStyle = '#2f2f2f';
+            ctx.fillRect(0, 16, 64, 12);
+            // Spikes
+            ctx.fillStyle = '#696969';
             ctx.fillRect(8, 28, 12, 20);
             ctx.fillRect(44, 28, 12, 20);
         });
@@ -909,6 +871,55 @@ class SpriteRenderer {
 }
 
 // ============================================
+// ATTACK PROJECTILES
+// ============================================
+class Projectile {
+    constructor(game, startX, startY, target, damage, speed = 8) {
+        this.game = game;
+        this.x = startX;
+        this.y = startY;
+        this.target = target;
+        this.damage = damage;
+        this.speed = speed;
+        this.active = true;
+    }
+
+    update(dt) {
+        if (!this.active || !this.target || this.target.health <= 0) {
+            this.active = false;
+            return;
+        }
+
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 0.3) {
+            // Hit target
+            this.target.takeDamage(this.damage);
+            this.active = false;
+            return;
+        }
+
+        // Move towards target
+        this.x += (dx / dist) * this.speed * dt;
+        this.y += (dy / dist) * this.speed * dt;
+    }
+
+    render(ctx, camera) {
+        if (!this.active) return;
+
+        const screenX = this.x * CONFIG.TILE_SIZE - camera.x;
+        const screenY = this.y * CONFIG.TILE_SIZE - camera.y;
+
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// ============================================
 // GAME ENTITIES
 // ============================================
 class Entity {
@@ -934,7 +945,6 @@ class Entity {
     }
 
     die() {
-        sound.play('death');
         this.game.removeEntity(this);
     }
 
@@ -961,6 +971,8 @@ class Unit extends Entity {
         this.harvestTarget = null;
         this.buildTarget = null;
         this.size = 1;
+        this.isAttacking = false;
+        this.attackWindup = 0;
 
         this.applyTypeStats();
     }
@@ -996,6 +1008,27 @@ class Unit extends Entity {
     update(dt) {
         this.attackCooldown = Math.max(0, this.attackCooldown - dt);
 
+        // Handle attack windup animation
+        if (this.isAttacking) {
+            this.attackWindup -= dt;
+            if (this.attackWindup <= 0) {
+                this.isAttacking = false;
+                if (this.target && this.target.health > 0) {
+                    // Deal damage after windup
+                    if (this.attackRange > 2) {
+                        // Ranged attack - create projectile
+                        this.game.projectiles.push(new Projectile(
+                            this.game, this.x, this.y, this.target, this.attackDamage
+                        ));
+                    } else {
+                        // Melee attack - direct damage
+                        this.target.takeDamage(this.attackDamage);
+                    }
+                }
+            }
+            return; // Don't do other actions while attacking
+        }
+
         switch(this.state) {
             case 'moving':
                 this.updateMoving(dt);
@@ -1029,8 +1062,11 @@ class Unit extends Entity {
         const dy = target.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 0.1) {
+        if (dist < 0.15) {
             this.pathIndex++;
+            if (this.pathIndex >= this.path.length) {
+                this.state = 'idle';
+            }
             return;
         }
 
@@ -1051,19 +1087,42 @@ class Unit extends Entity {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > this.attackRange + (this.target.size || 1)) {
-            this.moveTo(this.target.x, this.target.y);
+            // Move closer
+            if (this.path.length === 0 || this.pathIndex >= this.path.length) {
+                this.moveTo(this.target.x, this.target.y);
+            } else {
+                this.updateMoving(dt);
+            }
             return;
         }
 
+        // In range - attack!
         if (this.attackCooldown <= 0) {
-            this.attack(this.target);
+            this.startAttack();
             this.attackCooldown = this.attackSpeed;
         }
     }
 
+    startAttack() {
+        // Start attack animation/windup
+        this.isAttacking = true;
+        this.attackWindup = 0.3; // 300ms windup
+    }
+
     updateHarvesting(dt) {
         if (!this.harvestTarget || this.harvestTarget.depleted) {
+            // Find new resource of same type
+            const resourceType = this.harvestTarget ? this.harvestTarget.resourceType : null;
             this.harvestTarget = null;
+
+            if (resourceType) {
+                const newTarget = this.game.findNearestResource(this, resourceType);
+                if (newTarget) {
+                    this.harvestTarget = newTarget;
+                    this.moveTo(newTarget.x, newTarget.y);
+                    return;
+                }
+            }
             this.state = 'idle';
             return;
         }
@@ -1073,7 +1132,11 @@ class Unit extends Entity {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 1.5) {
-            this.moveTo(this.harvestTarget.x, this.harvestTarget.y);
+            if (this.path.length === 0 || this.pathIndex >= this.path.length) {
+                this.moveTo(this.harvestTarget.x, this.harvestTarget.y);
+            } else {
+                this.updateMoving(dt);
+            }
             return;
         }
 
@@ -1082,7 +1145,6 @@ class Unit extends Entity {
             if (harvested > 0) {
                 this.carryingResource = this.harvestTarget.resourceType;
                 this.carryAmount += harvested;
-                sound.play('harvest');
             }
 
             if (this.carryAmount >= 20 || this.harvestTarget.depleted) {
@@ -1123,6 +1185,7 @@ class Unit extends Entity {
         } else if (this.carryingResource === 'wood') {
             this.game.wood += this.carryAmount;
         }
+        const resourceType = this.carryingResource;
         this.carryAmount = 0;
         this.carryingResource = null;
 
@@ -1131,7 +1194,15 @@ class Unit extends Entity {
             this.state = 'harvesting';
             this.moveTo(this.harvestTarget.x, this.harvestTarget.y);
         } else {
-            this.state = 'idle';
+            // Find new resource
+            const newTarget = this.game.findNearestResource(this, resourceType);
+            if (newTarget) {
+                this.harvestTarget = newTarget;
+                this.state = 'harvesting';
+                this.moveTo(newTarget.x, newTarget.y);
+            } else {
+                this.state = 'idle';
+            }
         }
     }
 
@@ -1141,12 +1212,22 @@ class Unit extends Entity {
             return;
         }
 
+        if (!this.buildTarget.underConstruction) {
+            this.buildTarget = null;
+            this.state = 'idle';
+            return;
+        }
+
         const dx = this.buildTarget.x - this.x;
         const dy = this.buildTarget.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > this.buildTarget.size + 0.5) {
-            this.moveTo(this.buildTarget.x, this.buildTarget.y);
+            if (this.path.length === 0 || this.pathIndex >= this.path.length) {
+                this.moveTo(this.buildTarget.x, this.buildTarget.y);
+            } else {
+                this.updateMoving(dt);
+            }
             return;
         }
 
@@ -1155,7 +1236,6 @@ class Unit extends Entity {
         if (this.buildTarget.buildProgress >= 100) {
             this.buildTarget.buildProgress = 100;
             this.buildTarget.underConstruction = false;
-            sound.play('complete');
             this.game.showMessage(`${this.buildTarget.type} construction complete!`);
             this.buildTarget = null;
             this.state = 'idle';
@@ -1165,7 +1245,7 @@ class Unit extends Entity {
     updateIdle(dt) {
         // Auto-attack nearby enemies
         if (this.type !== 'worker') {
-            const enemy = this.game.findNearestEnemy(this, 5);
+            const enemy = this.game.findNearestEnemy(this, 6);
             if (enemy) {
                 this.target = enemy;
                 this.state = 'attacking';
@@ -1179,12 +1259,23 @@ class Unit extends Entity {
         if (this.path.length > 0) {
             this.state = 'moving';
         }
-        sound.play('move');
     }
 
-    attack(target) {
-        target.takeDamage(this.attackDamage);
-        sound.play('attack');
+    // Auto-assign worker to harvest
+    autoHarvest() {
+        if (this.type !== 'worker') return;
+
+        // Find nearest gold first, then wood
+        let target = this.game.findNearestResource(this, 'gold');
+        if (!target) {
+            target = this.game.findNearestResource(this, 'wood');
+        }
+
+        if (target) {
+            this.harvestTarget = target;
+            this.state = 'harvesting';
+            this.moveTo(target.x, target.y);
+        }
     }
 
     render(ctx) {
@@ -1200,11 +1291,18 @@ class Unit extends Entity {
             ctx.stroke();
         }
 
+        // Attack animation - flash red
+        if (this.isAttacking) {
+            ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.02) * 0.3;
+        }
+
         // Unit sprite
         const sprite = this.game.sprites.get(this.type);
         if (sprite) {
             ctx.drawImage(sprite, screenX, screenY);
         }
+
+        ctx.globalAlpha = 1;
 
         // Health bar
         if (this.health < this.maxHealth) {
@@ -1246,6 +1344,7 @@ class Building extends Entity {
         this.rallyPoint = { x: x + 3, y: y + 3 };
         this.trainQueue = [];
         this.trainProgress = 0;
+        this.queuedSupply = 0; // Track supply for units in queue
 
         this.applyTypeStats();
     }
@@ -1254,6 +1353,7 @@ class Building extends Entity {
         const stats = {
             townhall: { health: 1500, size: 3, supply: 10 },
             barracks: { health: 800, size: 2, supply: 0 },
+            enemyBarracks: { health: 800, size: 2, supply: 0 },
             tower: { health: 500, size: 1.5, supply: 0, attackRange: 7, attackDamage: 20 },
             farm: { health: 400, size: 2, supply: 6 },
             blacksmith: { health: 600, size: 2, supply: 0 },
@@ -1275,14 +1375,16 @@ class Building extends Entity {
         if (this.underConstruction) return;
 
         // Tower attacking
-        if (this.attackRange > 0) {
+        if (this.attackRange > 0 && this.owner === 'player') {
             this.attackCooldown = Math.max(0, this.attackCooldown - dt);
             if (this.attackCooldown <= 0) {
                 const enemy = this.game.findNearestEnemy(this, this.attackRange);
                 if (enemy) {
-                    enemy.takeDamage(this.attackDamage);
-                    sound.play('attack');
-                    this.attackCooldown = 1;
+                    // Create projectile instead of instant damage
+                    this.game.projectiles.push(new Projectile(
+                        this.game, this.x, this.y, enemy, this.attackDamage, 12
+                    ));
+                    this.attackCooldown = 1.5;
                 }
             }
         }
@@ -1296,17 +1398,25 @@ class Building extends Entity {
                 const unitType = this.trainQueue.shift();
                 this.trainProgress = 0;
 
+                // Get supply cost for this unit type
+                const costs = { worker: 1, soldier: 2, archer: 2, knight: 4, enemyGrunt: 0 };
+                this.queuedSupply -= costs[unitType] || 0;
+
                 // Spawn unit at rally point
                 const unit = new Unit(this.game, this.rallyPoint.x, this.rallyPoint.y, this.owner, unitType);
                 this.game.addEntity(unit);
-                sound.play('complete');
                 this.game.showMessage(`${unitType} trained!`);
+
+                // Auto-assign workers to harvest
+                if (unitType === 'worker' && this.owner === 'player') {
+                    unit.autoHarvest();
+                }
             }
         }
     }
 
     getTrainTime(unitType) {
-        const times = { worker: 20, soldier: 30, archer: 25, knight: 50 };
+        const times = { worker: 15, soldier: 25, archer: 20, knight: 40, enemyGrunt: 20 };
         return times[unitType] || 30;
     }
 
@@ -1316,28 +1426,33 @@ class Building extends Entity {
             soldier: { gold: 100, wood: 0, supply: 2 },
             archer: { gold: 80, wood: 50, supply: 2 },
             knight: { gold: 200, wood: 100, supply: 4 },
+            enemyGrunt: { gold: 0, wood: 0, supply: 0 },
         };
 
         const cost = costs[unitType];
-        if (!cost) return;
+        if (!cost) return false;
 
-        if (this.game.gold < cost.gold || this.game.wood < cost.wood) {
-            this.game.showMessage('Not enough resources!');
-            sound.play('error');
-            return;
+        if (this.owner === 'player') {
+            if (this.game.gold < cost.gold || this.game.wood < cost.wood) {
+                this.game.showMessage('Not enough resources!');
+                return false;
+            }
+
+            // Check supply including queued units
+            const currentSupply = this.game.getUsedSupply();
+            const queuedSupply = this.game.getQueuedSupply();
+            if (currentSupply + queuedSupply + cost.supply > this.game.supplyMax) {
+                this.game.showMessage('Not enough supply! Build more farms.');
+                return false;
+            }
+
+            this.game.gold -= cost.gold;
+            this.game.wood -= cost.wood;
         }
 
-        if (this.game.supply + cost.supply > this.game.supplyMax) {
-            this.game.showMessage('Not enough supply! Build more farms.');
-            sound.play('error');
-            return;
-        }
-
-        this.game.gold -= cost.gold;
-        this.game.wood -= cost.wood;
-        this.game.supply += cost.supply;
+        this.queuedSupply += cost.supply;
         this.trainQueue.push(unitType);
-        sound.play('build');
+        return true;
     }
 
     render(ctx) {
@@ -1461,19 +1576,37 @@ class EnemyAI {
         this.game = game;
         this.spawnTimer = 0;
         this.waveNumber = 0;
-        this.spawnInterval = 60; // seconds between waves
+        this.spawnInterval = 45; // seconds between waves
         this.difficulty = 1;
+        this.buildTimer = 0;
+        this.gold = 500;
+        this.wood = 300;
     }
 
     update(dt) {
         this.spawnTimer += dt;
+        this.buildTimer += dt;
 
+        // Passive income for enemy
+        this.gold += dt * 5;
+        this.wood += dt * 3;
+
+        // Build structures
+        if (this.buildTimer >= 30) {
+            this.tryBuild();
+            this.buildTimer = 0;
+        }
+
+        // Spawn waves
         if (this.spawnTimer >= this.spawnInterval) {
             this.spawnWave();
             this.spawnTimer = 0;
             this.waveNumber++;
-            this.difficulty += 0.2;
+            this.difficulty += 0.15;
         }
+
+        // Train units from barracks
+        this.trainUnits();
 
         // Control enemy units
         for (const entity of this.game.entities) {
@@ -1483,11 +1616,54 @@ class EnemyAI {
         }
     }
 
+    tryBuild() {
+        const enemyBase = this.game.entities.find(e => e.type === 'enemyBase');
+        if (!enemyBase) return;
+
+        // Count existing barracks
+        const barracks = this.game.entities.filter(e =>
+            e.owner === 'enemy' && e.type === 'enemyBarracks' && !e.underConstruction
+        ).length;
+
+        // Build more barracks if we can afford it and have less than 3
+        if (barracks < 3 && this.gold >= 150 && this.wood >= 75) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 4 + barracks * 2;
+            const x = enemyBase.x + Math.cos(angle) * dist;
+            const y = enemyBase.y + Math.sin(angle) * dist;
+
+            if (this.game.canPlaceBuilding(x, y, 2)) {
+                const newBarracks = new Building(this.game, x, y, 'enemy', 'enemyBarracks');
+                newBarracks.underConstruction = false; // Enemy buildings complete instantly
+                newBarracks.buildProgress = 100;
+                this.game.addEntity(newBarracks);
+                this.gold -= 150;
+                this.wood -= 75;
+                this.game.showMessage('Enemy built a barracks!');
+            }
+        }
+    }
+
+    trainUnits() {
+        const barracks = this.game.entities.filter(e =>
+            e.owner === 'enemy' &&
+            (e.type === 'enemyBarracks' || e.type === 'enemyBase') &&
+            !e.underConstruction
+        );
+
+        for (const b of barracks) {
+            if (b.trainQueue.length < 2 && this.gold >= 50) {
+                b.train('enemyGrunt');
+                this.gold -= 50;
+            }
+        }
+    }
+
     spawnWave() {
         const enemyBase = this.game.entities.find(e => e.type === 'enemyBase');
         if (!enemyBase) return;
 
-        const count = Math.floor(3 + this.waveNumber * this.difficulty);
+        const count = Math.floor(2 + this.waveNumber * 0.5 * this.difficulty);
         this.game.showMessage(`Wave ${this.waveNumber + 1}: ${count} enemies approaching!`);
 
         for (let i = 0; i < count; i++) {
@@ -1496,7 +1672,9 @@ class EnemyAI {
             const y = enemyBase.y + Math.sin(angle) * 3;
 
             const grunt = new Unit(this.game, x, y, 'enemy', 'enemyGrunt');
-            grunt.health = grunt.maxHealth * this.difficulty;
+            grunt.maxHealth = Math.floor(grunt.maxHealth * this.difficulty);
+            grunt.health = grunt.maxHealth;
+            grunt.attackDamage = Math.floor(grunt.attackDamage * this.difficulty);
             this.game.addEntity(grunt);
         }
     }
@@ -1530,6 +1708,7 @@ class Game {
 
         this.entities = [];
         this.selectedEntities = [];
+        this.projectiles = [];
 
         this.gold = 500;
         this.wood = 500;
@@ -1539,7 +1718,7 @@ class Game {
         this.camera = { x: 0, y: 0 };
         this.mapTiles = [];
 
-        this.mouse = { x: 0, y: 0, down: false };
+        this.mouse = { x: 0, y: 0, down: false, onCanvas: false };
         this.selectionBox = null;
         this.buildingPlacement = null;
 
@@ -1582,6 +1761,8 @@ class Game {
         this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
         this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        this.canvas.addEventListener('mouseenter', () => { this.mouse.onCanvas = true; });
+        this.canvas.addEventListener('mouseleave', () => { this.mouse.onCanvas = false; });
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
         document.addEventListener('keydown', (e) => this.onKeyDown(e));
@@ -1593,8 +1774,6 @@ class Game {
         this.mouse.x = e.clientX - rect.left;
         this.mouse.y = e.clientY - rect.top;
         this.mouse.down = true;
-
-        sound.resume();
 
         if (e.button === 0) { // Left click
             if (this.buildingPlacement) {
@@ -1700,6 +1879,7 @@ class Game {
             } else {
                 // Move to location
                 unit.moveTo(worldX, worldY);
+                unit.state = 'moving';
                 unit.target = null;
                 unit.harvestTarget = null;
             }
@@ -1726,7 +1906,6 @@ class Game {
             if (entity && entity.owner === 'player') {
                 entity.selected = true;
                 this.selectedEntities.push(entity);
-                sound.play('select');
             }
         } else {
             // Box selection
@@ -1741,10 +1920,6 @@ class Game {
                     entity.selected = true;
                     this.selectedEntities.push(entity);
                 }
-            }
-
-            if (this.selectedEntities.length > 0) {
-                sound.play('select');
             }
         }
 
@@ -1864,24 +2039,40 @@ class Game {
         this.updateSupply();
     }
 
+    getUsedSupply() {
+        let used = 0;
+        for (const entity of this.entities) {
+            if (entity.owner === 'player' && entity instanceof Unit) {
+                const costs = { worker: 1, soldier: 2, archer: 2, knight: 4 };
+                used += costs[entity.type] || 1;
+            }
+        }
+        return used;
+    }
+
+    getQueuedSupply() {
+        let queued = 0;
+        for (const entity of this.entities) {
+            if (entity.owner === 'player' && entity instanceof Building) {
+                queued += entity.queuedSupply || 0;
+            }
+        }
+        return queued;
+    }
+
     updateSupply() {
         let provided = 0;
-        let used = 0;
 
         for (const entity of this.entities) {
             if (entity.owner === 'player') {
                 if (entity instanceof Building && !entity.underConstruction) {
                     provided += entity.supplyProvided || 0;
                 }
-                if (entity instanceof Unit) {
-                    const costs = { worker: 1, soldier: 2, archer: 2, knight: 4 };
-                    used += costs[entity.type] || 1;
-                }
             }
         }
 
         this.supplyMax = provided;
-        this.supply = used;
+        this.supply = this.getUsedSupply();
     }
 
     isWalkable(x, y) {
@@ -1898,10 +2089,10 @@ class Game {
             }
         }
 
-        // Check for trees
+        // Check for trees (but allow walking near them)
         for (const entity of this.entities) {
             if (entity instanceof Resource && entity.resourceType === 'wood' && !entity.depleted) {
-                if (Math.abs(x - entity.x) < 0.8 && Math.abs(y - entity.y) < 0.8) {
+                if (Math.abs(x - entity.x) < 0.5 && Math.abs(y - entity.y) < 0.5) {
                     return false;
                 }
             }
@@ -1915,7 +2106,26 @@ class Game {
         let nearestDist = Infinity;
 
         for (const entity of this.entities) {
-            if (entity instanceof Building && entity.owner === unit.owner && entity.type === type) {
+            if (entity instanceof Building && entity.owner === unit.owner && entity.type === type && !entity.underConstruction) {
+                const dx = entity.x - unit.x;
+                const dy = entity.y - unit.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = entity;
+                }
+            }
+        }
+
+        return nearest;
+    }
+
+    findNearestResource(unit, resourceType) {
+        let nearest = null;
+        let nearestDist = Infinity;
+
+        for (const entity of this.entities) {
+            if (entity instanceof Resource && entity.resourceType === resourceType && !entity.depleted) {
                 const dx = entity.x - unit.x;
                 const dy = entity.y - unit.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
@@ -2010,14 +2220,12 @@ class Game {
 
         if (this.gold < cost.gold || this.wood < cost.wood) {
             this.showMessage('Not enough resources!');
-            sound.play('error');
             return;
         }
 
         // Check if location is valid
         if (!this.canPlaceBuilding(worldX, worldY, 2)) {
             this.showMessage('Cannot build here!');
-            sound.play('error');
             return;
         }
 
@@ -2036,7 +2244,6 @@ class Game {
             }
         }
 
-        sound.play('build');
         this.buildingPlacement = null;
     }
 
@@ -2122,7 +2329,7 @@ class Game {
     updateUI() {
         document.getElementById('gold-count').textContent = Math.floor(this.gold);
         document.getElementById('wood-count').textContent = Math.floor(this.wood);
-        document.getElementById('supply-count').textContent = this.supply;
+        document.getElementById('supply-count').textContent = this.supply + this.getQueuedSupply();
         document.getElementById('supply-max').textContent = this.supplyMax;
 
         const minutes = Math.floor(this.gameTime / 60);
@@ -2222,17 +2429,19 @@ class Game {
     update(dt) {
         this.gameTime += dt;
 
-        // Camera movement with keyboard
-        if (this.keys['arrowleft'] || this.keys['a']) this.camera.x -= CONFIG.CAMERA_SPEED;
-        if (this.keys['arrowright'] || this.keys['d']) this.camera.x += CONFIG.CAMERA_SPEED;
-        if (this.keys['arrowup'] || this.keys['w']) this.camera.y -= CONFIG.CAMERA_SPEED;
-        if (this.keys['arrowdown'] || this.keys['s']) this.camera.y += CONFIG.CAMERA_SPEED;
+        // Camera movement with keyboard (but not when W is used for training)
+        if (this.keys['arrowleft']) this.camera.x -= CONFIG.CAMERA_SPEED;
+        if (this.keys['arrowright']) this.camera.x += CONFIG.CAMERA_SPEED;
+        if (this.keys['arrowup']) this.camera.y -= CONFIG.CAMERA_SPEED;
+        if (this.keys['arrowdown']) this.camera.y += CONFIG.CAMERA_SPEED;
 
-        // Camera edge scrolling
-        if (this.mouse.x < CONFIG.SCROLL_EDGE) this.camera.x -= CONFIG.CAMERA_SPEED;
-        if (this.mouse.x > this.canvas.width - CONFIG.SCROLL_EDGE) this.camera.x += CONFIG.CAMERA_SPEED;
-        if (this.mouse.y < CONFIG.SCROLL_EDGE) this.camera.y -= CONFIG.CAMERA_SPEED;
-        if (this.mouse.y > this.canvas.height - CONFIG.SCROLL_EDGE) this.camera.y += CONFIG.CAMERA_SPEED;
+        // Camera edge scrolling - only when mouse is on canvas
+        if (this.mouse.onCanvas) {
+            if (this.mouse.x < CONFIG.SCROLL_EDGE && this.mouse.x >= 0) this.camera.x -= CONFIG.CAMERA_SPEED;
+            if (this.mouse.x > this.canvas.width - CONFIG.SCROLL_EDGE) this.camera.x += CONFIG.CAMERA_SPEED;
+            if (this.mouse.y < CONFIG.SCROLL_EDGE && this.mouse.y >= 0) this.camera.y -= CONFIG.CAMERA_SPEED;
+            if (this.mouse.y > this.canvas.height - CONFIG.SCROLL_EDGE) this.camera.y += CONFIG.CAMERA_SPEED;
+        }
 
         // Clamp camera
         this.camera.x = Math.max(0, Math.min(CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE - this.canvas.width, this.camera.x));
@@ -2243,12 +2452,19 @@ class Game {
             entity.update(dt);
         }
 
+        // Update projectiles
+        this.projectiles = this.projectiles.filter(p => p.active);
+        for (const proj of this.projectiles) {
+            proj.update(dt);
+        }
+
         // Update enemy AI
         this.enemyAI.update(dt);
 
         // Check win/lose conditions
         this.checkGameState();
 
+        this.updateSupply();
         this.updateUI();
     }
 
@@ -2277,6 +2493,11 @@ class Game {
         const sortedEntities = [...this.entities].sort((a, b) => a.y - b.y);
         for (const entity of sortedEntities) {
             entity.render(this.ctx);
+        }
+
+        // Render projectiles
+        for (const proj of this.projectiles) {
+            proj.render(this.ctx, this.camera);
         }
 
         // Render selection box
@@ -2418,6 +2639,7 @@ class Game {
 
         this.entities = [];
         this.selectedEntities = [];
+        this.projectiles = [];
 
         for (const e of data.entities) {
             let entity;
@@ -2492,7 +2714,6 @@ function renderTechTree() {
                 game.gold -= tech.cost.gold;
                 game.wood -= tech.cost.wood;
                 game.tech[tech.id] = true;
-                sound.play('complete');
                 game.showMessage(`${tech.name} researched!`);
                 renderTechTree();
             };
@@ -2509,7 +2730,6 @@ function saveGame() {
     const data = game.save();
     localStorage.setItem('warcraft_save', data);
     game.showMessage('Game saved!');
-    sound.play('complete');
 }
 
 function loadGame() {
@@ -2517,10 +2737,8 @@ function loadGame() {
     if (data) {
         game.load(data);
         game.showMessage('Game loaded!');
-        sound.play('complete');
     } else {
         game.showMessage('No save found!');
-        sound.play('error');
     }
 }
 
