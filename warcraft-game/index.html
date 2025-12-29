@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warcraft-Style RTS Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #top-bar {
+            background: linear-gradient(180deg, #4a3728 0%, #2d2118 100%);
+            border-bottom: 3px solid #8b7355;
+            padding: 8px 20px;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            height: 50px;
+        }
+
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffd700;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px #000;
+        }
+
+        .resource-icon {
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+        }
+
+        .supply {
+            color: #90EE90;
+        }
+
+        #game-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #game-canvas {
+            background: #2d5a27;
+            cursor: crosshair;
+        }
+
+        #right-panel {
+            width: 280px;
+            background: linear-gradient(180deg, #3d2e1f 0%, #2a1f14 100%);
+            border-left: 3px solid #8b7355;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #minimap-container {
+            padding: 10px;
+            border-bottom: 2px solid #8b7355;
+        }
+
+        #minimap {
+            width: 260px;
+            height: 200px;
+            background: #1a3d16;
+            border: 2px solid #5a4a3a;
+            image-rendering: pixelated;
+        }
+
+        #selection-info {
+            padding: 10px;
+            border-bottom: 2px solid #8b7355;
+            min-height: 120px;
+        }
+
+        #selection-info h3 {
+            color: #ffd700;
+            font-size: 14px;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px #000;
+        }
+
+        #selection-details {
+            color: #ccc;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        #actions-panel {
+            padding: 10px;
+            flex: 1;
+        }
+
+        #actions-panel h3 {
+            color: #ffd700;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px #000;
+        }
+
+        #action-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+
+        .action-btn {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(180deg, #5a4a3a 0%, #3a2a1a 100%);
+            border: 2px solid #8b7355;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 10px;
+            text-shadow: 1px 1px #000;
+            image-rendering: pixelated;
+            transition: all 0.1s;
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(180deg, #7a6a5a 0%, #5a4a3a 100%);
+            border-color: #ffd700;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-btn canvas {
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+        }
+
+        #bottom-bar {
+            background: linear-gradient(180deg, #4a3728 0%, #2d2118 100%);
+            border-top: 3px solid #8b7355;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+        }
+
+        #game-messages {
+            color: #ffd700;
+            font-size: 12px;
+        }
+
+        #game-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background: linear-gradient(180deg, #5a4a3a 0%, #3a2a1a 100%);
+            border: 2px solid #8b7355;
+            color: #ffd700;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .control-btn:hover {
+            border-color: #ffd700;
+        }
+
+        #tech-tree-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #tech-tree-content {
+            background: linear-gradient(180deg, #3d2e1f 0%, #2a1f14 100%);
+            border: 3px solid #8b7355;
+            padding: 20px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #tech-tree-content h2 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .tech-item {
+            background: #2a1f14;
+            border: 2px solid #5a4a3a;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .tech-item:hover {
+            border-color: #ffd700;
+        }
+
+        .tech-item.unlocked {
+            border-color: #4CAF50;
+            background: #1a3d1a;
+        }
+
+        .tech-item.available {
+            border-color: #ffd700;
+        }
+
+        .tech-item h4 {
+            color: #ffd700;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .tech-item p {
+            color: #aaa;
+            font-size: 10px;
+        }
+
+        .tech-cost {
+            color: #ffd700;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        #build-queue {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .queue-item {
+            width: 40px;
+            height: 40px;
+            background: #2a1f14;
+            border: 2px solid #5a4a3a;
+            position: relative;
+        }
+
+        .queue-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: #4CAF50;
+        }
+
+        #health-bar-container {
+            margin-top: 10px;
+        }
+
+        .health-bar-bg {
+            width: 100%;
+            height: 15px;
+            background: #333;
+            border: 1px solid #666;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(180deg, #4CAF50 0%, #2d7a2d 100%);
+            transition: width 0.2s;
+        }
+
+        .health-text {
+            color: #fff;
+            font-size: 10px;
+            text-align: center;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="top-bar">
+        <div class="resource">
+            <canvas id="gold-icon" class="resource-icon"></canvas>
+            <span id="gold-count">500</span>
+        </div>
+        <div class="resource">
+            <canvas id="wood-icon" class="resource-icon"></canvas>
+            <span id="wood-count">500</span>
+        </div>
+        <div class="resource supply">
+            <span>Supply: <span id="supply-count">5</span>/<span id="supply-max">10</span></span>
+        </div>
+        <div style="flex: 1;"></div>
+        <div class="resource">
+            <span id="game-time">00:00</span>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="right-panel">
+            <div id="minimap-container">
+                <canvas id="minimap"></canvas>
+            </div>
+
+            <div id="selection-info">
+                <h3>Selection</h3>
+                <div id="selection-details">No unit selected</div>
+                <div id="health-bar-container" style="display: none;">
+                    <div class="health-bar-bg">
+                        <div class="health-bar-fill" id="health-fill"></div>
+                    </div>
+                    <div class="health-text" id="health-text">100/100</div>
+                </div>
+                <div id="build-queue"></div>
+            </div>
+
+            <div id="actions-panel">
+                <h3>Actions</h3>
+                <div id="action-buttons"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bottom-bar">
+        <div id="game-messages">Welcome, Commander! Build your base and defeat the enemy!</div>
+        <div id="game-controls">
+            <button class="control-btn" onclick="openTechTree()">Tech Tree (T)</button>
+            <button class="control-btn" onclick="saveGame()">Save (F5)</button>
+            <button class="control-btn" onclick="loadGame()">Load (F9)</button>
+        </div>
+    </div>
+
+    <div id="tech-tree-modal">
+        <span class="close-modal" onclick="closeTechTree()">&times;</span>
+        <div id="tech-tree-content">
+            <h2>Technology Tree</h2>
+            <div class="tech-grid" id="tech-grid"></div>
+        </div>
+    </div>
+
+    <script>
+// ============================================
+// GAME CONFIGURATION
+// ============================================
+const CONFIG = {
+    TILE_SIZE: 32,
+    MAP_WIDTH: 60,
+    MAP_HEIGHT: 45,
+    CAMERA_SPEED: 15,
+    SCROLL_EDGE: 30,
+};
+
+// ============================================
+// SOUND SYSTEM (Web Audio API)
+// ============================================
+class SoundSystem {
+    constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.sounds = {};
+        this.init();
+    }
+
+    init() {
+        try {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.createSounds();
+        } catch(e) {
+            console.log('Audio not supported');
+        }
+    }
+
+    resume() {
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    createSounds() {
+        // Pre-generate sound parameters
+        this.sounds = {
+            select: { freq: 600, duration: 0.1, type: 'square' },
+            move: { freq: 400, duration: 0.08, type: 'sine' },
+            attack: { freq: 150, duration: 0.15, type: 'sawtooth' },
+            build: { freq: 300, duration: 0.2, type: 'triangle' },
+            harvest: { freq: 500, duration: 0.1, type: 'sine' },
+            complete: { freq: [400, 600, 800], duration: 0.3, type: 'square' },
+            error: { freq: 200, duration: 0.3, type: 'sawtooth' },
+            death: { freq: 100, duration: 0.4, type: 'sawtooth' },
+        };
+    }
+
+    play(soundName) {
+        if (!this.enabled || !this.ctx) return;
+        this.resume();
+
+        const sound = this.sounds[soundName];
+        if (!sound) return;
+
+        const oscillator = this.ctx.createOscillator();
+        const gainNode = this.ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.ctx.destination);
+
+        oscillator.type = sound.type;
+
+        if (Array.isArray(sound.freq)) {
+            // Melody
+            const now = this.ctx.currentTime;
+            sound.freq.forEach((f, i) => {
+                oscillator.frequency.setValueAtTime(f, now + i * 0.1);
+            });
+        } else {
+            oscillator.frequency.value = sound.freq;
+        }
+
+        gainNode.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + sound.duration);
+
+        oscillator.start(this.ctx.currentTime);
+        oscillator.stop(this.ctx.currentTime + sound.duration);
+    }
+}
+
+const sound = new SoundSystem();
+
+// ============================================
+// A* PATHFINDING
+// ============================================
+class Pathfinding {
+    constructor(game) {
+        this.game = game;
+    }
+
+    heuristic(a, b) {
+        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    }
+
+    getNeighbors(node) {
+        const dirs = [
+            {x: 0, y: -1}, {x: 1, y: 0}, {x: 0, y: 1}, {x: -1, y: 0},
+            {x: 1, y: -1}, {x: 1, y: 1}, {x: -1, y: 1}, {x: -1, y: -1}
+        ];
+
+        const neighbors = [];
+        for (const dir of dirs) {
+            const nx = node.x + dir.x;
+            const ny = node.y + dir.y;
+
+            if (nx >= 0 && nx < CONFIG.MAP_WIDTH && ny >= 0 && ny < CONFIG.MAP_HEIGHT) {
+                if (this.game.isWalkable(nx, ny)) {
+                    neighbors.push({x: nx, y: ny});
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    findPath(startX, startY, endX, endY) {
+        const start = {x: Math.floor(startX), y: Math.floor(startY)};
+        const end = {x: Math.floor(endX), y: Math.floor(endY)};
+
+        // If end is not walkable, find nearest walkable
+        if (!this.game.isWalkable(end.x, end.y)) {
+            const nearest = this.findNearestWalkable(end.x, end.y);
+            if (nearest) {
+                end.x = nearest.x;
+                end.y = nearest.y;
+            } else {
+                return [];
+            }
+        }
+
+        const openSet = [start];
+        const closedSet = new Set();
+        const gScore = new Map();
+        const fScore = new Map();
+        const cameFrom = new Map();
+
+        const key = (n) => `${n.x},${n.y}`;
+
+        gScore.set(key(start), 0);
+        fScore.set(key(start), this.heuristic(start, end));
+
+        let iterations = 0;
+        const maxIterations = 1000;
+
+        while (openSet.length > 0 && iterations < maxIterations) {
+            iterations++;
+
+            // Find node with lowest fScore
+            openSet.sort((a, b) => (fScore.get(key(a)) || Infinity) - (fScore.get(key(b)) || Infinity));
+            const current = openSet.shift();
+
+            if (current.x === end.x && current.y === end.y) {
+                // Reconstruct path
+                const path = [];
+                let node = current;
+                while (node) {
+                    path.unshift({x: node.x + 0.5, y: node.y + 0.5});
+                    node = cameFrom.get(key(node));
+                }
+                return path;
+            }
+
+            closedSet.add(key(current));
+
+            for (const neighbor of this.getNeighbors(current)) {
+                if (closedSet.has(key(neighbor))) continue;
+
+                const tentativeG = (gScore.get(key(current)) || 0) + 1;
+
+                if (!openSet.find(n => n.x === neighbor.x && n.y === neighbor.y)) {
+                    openSet.push(neighbor);
+                } else if (tentativeG >= (gScore.get(key(neighbor)) || Infinity)) {
+                    continue;
+                }
+
+                cameFrom.set(key(neighbor), current);
+                gScore.set(key(neighbor), tentativeG);
+                fScore.set(key(neighbor), tentativeG + this.heuristic(neighbor, end));
+            }
+        }
+
+        return [];
+    }
+
+    findNearestWalkable(x, y) {
+        for (let r = 1; r < 10; r++) {
+            for (let dx = -r; dx <= r; dx++) {
+                for (let dy = -r; dy <= r; dy++) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (this.game.isWalkable(nx, ny)) {
+                        return {x: nx, y: ny};
+                    }
+                }
+            }
+        }
+        return null;
+    }
+}
+
+// ============================================
+// PIXEL ART SPRITES
+// ============================================
+class SpriteRenderer {
+    constructor() {
+        this.sprites = {};
+        this.createAllSprites();
+    }
+
+    createSprite(width, height, drawFunc) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        drawFunc(ctx, width, height);
+        return canvas;
+    }
+
+    createAllSprites() {
+        // Gold icon
+        this.sprites.goldIcon = this.createSprite(24, 24, (ctx) => {
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(6, 4, 12, 16);
+            ctx.fillStyle = '#ffec8b';
+            ctx.fillRect(8, 6, 4, 6);
+            ctx.fillStyle = '#b8860b';
+            ctx.fillRect(14, 12, 4, 8);
+        });
+
+        // Wood icon
+        this.sprites.woodIcon = this.createSprite(24, 24, (ctx) => {
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(4, 8, 16, 12);
+            ctx.fillStyle = '#a0522d';
+            ctx.fillRect(6, 10, 6, 4);
+            ctx.fillStyle = '#d2691e';
+            ctx.fillRect(8, 6, 8, 4);
+        });
+
+        // Worker unit
+        this.sprites.worker = this.createSprite(32, 32, (ctx) => {
+            // Body
+            ctx.fillStyle = '#4169e1';
+            ctx.fillRect(10, 12, 12, 14);
+            // Head
+            ctx.fillStyle = '#ffd5b5';
+            ctx.fillRect(12, 4, 8, 8);
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(13, 6, 2, 2);
+            ctx.fillRect(17, 6, 2, 2);
+            // Pickaxe
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(22, 8, 2, 12);
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(20, 6, 6, 4);
+        });
+
+        // Soldier unit
+        this.sprites.soldier = this.createSprite(32, 32, (ctx) => {
+            // Body
+            ctx.fillStyle = '#4169e1';
+            ctx.fillRect(10, 12, 12, 14);
+            // Armor
+            ctx.fillStyle = '#708090';
+            ctx.fillRect(11, 13, 10, 8);
+            // Head with helmet
+            ctx.fillStyle = '#708090';
+            ctx.fillRect(11, 3, 10, 9);
+            ctx.fillStyle = '#ffd5b5';
+            ctx.fillRect(13, 6, 6, 4);
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(14, 7, 2, 2);
+            ctx.fillRect(17, 7, 2, 2);
+            // Sword
+            ctx.fillStyle = '#c0c0c0';
+            ctx.fillRect(23, 10, 3, 16);
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(22, 14, 5, 2);
+        });
+
+        // Archer unit
+        this.sprites.archer = this.createSprite(32, 32, (ctx) => {
+            // Body
+            ctx.fillStyle = '#228b22';
+            ctx.fillRect(10, 12, 12, 14);
+            // Head
+            ctx.fillStyle = '#ffd5b5';
+            ctx.fillRect(12, 4, 8, 8);
+            // Hood
+            ctx.fillStyle = '#228b22';
+            ctx.fillRect(11, 3, 10, 4);
+            // Eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(13, 6, 2, 2);
+            ctx.fillRect(17, 6, 2, 2);
+            // Bow
+            ctx.fillStyle = '#8b4513';
+            ctx.arc(24, 16, 8, -Math.PI/2, Math.PI/2);
+            ctx.fillRect(22, 8, 2, 16);
+        });
+
+        // Knight unit
+        this.sprites.knight = this.createSprite(32, 32, (ctx) => {
+            // Horse body
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(4, 18, 24, 10);
+            // Horse legs
+            ctx.fillRect(6, 26, 4, 6);
+            ctx.fillRect(22, 26, 4, 6);
+            // Horse head
+            ctx.fillRect(24, 14, 6, 8);
+            // Rider body
+            ctx.fillStyle = '#4169e1';
+            ctx.fillRect(10, 6, 10, 12);
+            // Armor
+            ctx.fillStyle = '#c0c0c0';
+            ctx.fillRect(11, 7, 8, 8);
+            // Helmet
+            ctx.fillRect(12, 0, 6, 6);
+            // Lance
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(2, 4, 16, 2);
+            ctx.fillStyle = '#c0c0c0';
+            ctx.fillRect(0, 2, 4, 6);
+        });
+
+        // Enemy grunt
+        this.sprites.enemyGrunt = this.createSprite(32, 32, (ctx) => {
+            // Body
+            ctx.fillStyle = '#8b0000';
+            ctx.fillRect(10, 12, 12, 14);
+            // Head
+            ctx.fillStyle = '#556b2f';
+            ctx.fillRect(11, 3, 10, 10);
+            // Eyes
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(13, 6, 2, 3);
+            ctx.fillRect(17, 6, 2, 3);
+            // Tusks
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(12, 10, 2, 3);
+            ctx.fillRect(18, 10, 2, 3);
+            // Axe
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(23, 8, 2, 14);
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(21, 6, 6, 6);
+        });
+
+        // Town Hall
+        this.sprites.townhall = this.createSprite(96, 96, (ctx) => {
+            // Base
+            ctx.fillStyle = '#8b7355';
+            ctx.fillRect(8, 40, 80, 50);
+            // Door
+            ctx.fillStyle = '#4a3728';
+            ctx.fillRect(38, 60, 20, 30);
+            // Roof
+            ctx.fillStyle = '#4a3728';
+            ctx.beginPath();
+            ctx.moveTo(48, 8);
+            ctx.lineTo(8, 44);
+            ctx.lineTo(88, 44);
+            ctx.fill();
+            // Windows
+            ctx.fillStyle = '#87ceeb';
+            ctx.fillRect(16, 50, 12, 12);
+            ctx.fillRect(68, 50, 12, 12);
+            // Banner
+            ctx.fillStyle = '#4169e1';
+            ctx.fillRect(44, 12, 8, 20);
+        });
+
+        // Barracks
+        this.sprites.barracks = this.createSprite(64, 64, (ctx) => {
+            // Base
+            ctx.fillStyle = '#708090';
+            ctx.fillRect(4, 24, 56, 36);
+            // Door
+            ctx.fillStyle = '#4a3728';
+            ctx.fillRect(24, 40, 16, 20);
+            // Roof
+            ctx.fillStyle = '#4a3728';
+            ctx.fillRect(0, 16, 64, 12);
+            // Weapons rack
+            ctx.fillStyle = '#c0c0c0';
+            ctx.fillRect(8, 28, 12, 20);
+            ctx.fillRect(44, 28, 12, 20);
+        });
+
+        // Tower
+        this.sprites.tower = this.createSprite(48, 64, (ctx) => {
+            // Base
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(8, 20, 32, 44);
+            // Top
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(4, 12, 40, 12);
+            // Crenellations
+            ctx.fillStyle = '#808080';
+            for (let i = 0; i < 5; i++) {
+                ctx.fillRect(4 + i * 10, 4, 6, 10);
+            }
+            // Arrow slit
+            ctx.fillStyle = '#2f2f2f';
+            ctx.fillRect(20, 32, 8, 16);
+        });
+
+        // Farm
+        this.sprites.farm = this.createSprite(64, 64, (ctx) => {
+            // Field
+            ctx.fillStyle = '#daa520';
+            ctx.fillRect(4, 28, 56, 32);
+            // Rows
+            ctx.fillStyle = '#8b4513';
+            for (let i = 0; i < 5; i++) {
+                ctx.fillRect(8, 32 + i * 6, 48, 2);
+            }
+            // Barn
+            ctx.fillStyle = '#a52a2a';
+            ctx.fillRect(18, 8, 28, 24);
+            ctx.fillStyle = '#8b4513';
+            ctx.beginPath();
+            ctx.moveTo(32, 0);
+            ctx.lineTo(14, 12);
+            ctx.lineTo(50, 12);
+            ctx.fill();
+        });
+
+        // Blacksmith
+        this.sprites.blacksmith = this.createSprite(64, 64, (ctx) => {
+            // Base
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(4, 24, 56, 36);
+            // Chimney
+            ctx.fillStyle = '#505050';
+            ctx.fillRect(44, 4, 12, 24);
+            // Smoke
+            ctx.fillStyle = '#888';
+            ctx.fillRect(48, 0, 4, 6);
+            // Door
+            ctx.fillStyle = '#4a3728';
+            ctx.fillRect(24, 40, 16, 20);
+            // Anvil
+            ctx.fillStyle = '#2f2f2f';
+            ctx.fillRect(8, 44, 12, 8);
+            // Fire glow
+            ctx.fillStyle = '#ff6600';
+            ctx.fillRect(46, 28, 8, 8);
+        });
+
+        // Gold mine
+        this.sprites.goldmine = this.createSprite(64, 64, (ctx) => {
+            // Rock base
+            ctx.fillStyle = '#696969';
+            ctx.fillRect(8, 24, 48, 36);
+            // Cave entrance
+            ctx.fillStyle = '#2f2f2f';
+            ctx.fillRect(20, 32, 24, 28);
+            // Gold veins
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(12, 28, 6, 6);
+            ctx.fillRect(46, 36, 6, 6);
+            ctx.fillRect(16, 48, 4, 4);
+            // Rocks
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(4, 44, 8, 12);
+            ctx.fillRect(52, 40, 8, 16);
+        });
+
+        // Tree
+        this.sprites.tree = this.createSprite(32, 40, (ctx) => {
+            // Trunk
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(12, 24, 8, 16);
+            // Foliage
+            ctx.fillStyle = '#228b22';
+            ctx.fillRect(4, 4, 24, 24);
+            ctx.fillStyle = '#2e8b2e';
+            ctx.fillRect(8, 0, 16, 8);
+            ctx.fillRect(0, 12, 8, 12);
+            ctx.fillRect(24, 12, 8, 12);
+        });
+
+        // Enemy base
+        this.sprites.enemyBase = this.createSprite(96, 96, (ctx) => {
+            // Base
+            ctx.fillStyle = '#4a0000';
+            ctx.fillRect(8, 40, 80, 50);
+            // Spikes
+            ctx.fillStyle = '#2f2f2f';
+            for (let i = 0; i < 6; i++) {
+                ctx.beginPath();
+                ctx.moveTo(12 + i * 14, 40);
+                ctx.lineTo(18 + i * 14, 20);
+                ctx.lineTo(24 + i * 14, 40);
+                ctx.fill();
+            }
+            // Door
+            ctx.fillStyle = '#2f0000';
+            ctx.fillRect(38, 60, 20, 30);
+            // Skulls
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(16, 50, 10, 10);
+            ctx.fillRect(70, 50, 10, 10);
+            // Eye sockets
+            ctx.fillStyle = '#f00';
+            ctx.fillRect(18, 52, 2, 2);
+            ctx.fillRect(22, 52, 2, 2);
+            ctx.fillRect(72, 52, 2, 2);
+            ctx.fillRect(76, 52, 2, 2);
+        });
+    }
+
+    get(name) {
+        return this.sprites[name];
+    }
+}
+
+// ============================================
+// GAME ENTITIES
+// ============================================
+class Entity {
+    constructor(game, x, y, owner) {
+        this.game = game;
+        this.x = x;
+        this.y = y;
+        this.owner = owner; // 'player' or 'enemy'
+        this.selected = false;
+        this.health = 100;
+        this.maxHealth = 100;
+    }
+
+    update(dt) {}
+    render(ctx) {}
+
+    takeDamage(amount) {
+        this.health -= amount;
+        if (this.health <= 0) {
+            this.health = 0;
+            this.die();
+        }
+    }
+
+    die() {
+        sound.play('death');
+        this.game.removeEntity(this);
+    }
+
+    getCenter() {
+        return { x: this.x, y: this.y };
+    }
+}
+
+class Unit extends Entity {
+    constructor(game, x, y, owner, type) {
+        super(game, x, y, owner);
+        this.type = type;
+        this.path = [];
+        this.pathIndex = 0;
+        this.speed = 2;
+        this.target = null;
+        this.state = 'idle';
+        this.attackRange = 1.5;
+        this.attackDamage = 10;
+        this.attackCooldown = 0;
+        this.attackSpeed = 1;
+        this.carryingResource = null;
+        this.carryAmount = 0;
+        this.harvestTarget = null;
+        this.buildTarget = null;
+        this.size = 1;
+
+        this.applyTypeStats();
+    }
+
+    applyTypeStats() {
+        const stats = {
+            worker: { health: 50, speed: 2.5, damage: 5, range: 1, attackSpeed: 1.5 },
+            soldier: { health: 100, speed: 2, damage: 15, range: 1.2, attackSpeed: 1 },
+            archer: { health: 60, speed: 2.5, damage: 12, range: 6, attackSpeed: 1.2 },
+            knight: { health: 200, speed: 3, damage: 25, range: 1.5, attackSpeed: 0.8 },
+            enemyGrunt: { health: 80, speed: 1.8, damage: 12, range: 1.2, attackSpeed: 1.1 },
+        };
+
+        const s = stats[this.type] || stats.soldier;
+        this.maxHealth = s.health;
+        this.health = s.health;
+        this.speed = s.speed;
+        this.attackDamage = s.damage;
+        this.attackRange = s.range;
+        this.attackSpeed = s.attackSpeed;
+
+        // Apply tech upgrades
+        if (this.owner === 'player') {
+            if (this.game.tech.attack1) this.attackDamage += 5;
+            if (this.game.tech.attack2) this.attackDamage += 5;
+            if (this.game.tech.defense1) this.maxHealth += 20;
+            if (this.game.tech.defense2) this.maxHealth += 30;
+            if (this.game.tech.speed1) this.speed += 0.5;
+            this.health = this.maxHealth;
+        }
+    }
+
+    update(dt) {
+        this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+
+        switch(this.state) {
+            case 'moving':
+                this.updateMoving(dt);
+                break;
+            case 'attacking':
+                this.updateAttacking(dt);
+                break;
+            case 'harvesting':
+                this.updateHarvesting(dt);
+                break;
+            case 'returning':
+                this.updateReturning(dt);
+                break;
+            case 'building':
+                this.updateBuilding(dt);
+                break;
+            case 'idle':
+                this.updateIdle(dt);
+                break;
+        }
+    }
+
+    updateMoving(dt) {
+        if (this.path.length === 0 || this.pathIndex >= this.path.length) {
+            this.state = 'idle';
+            return;
+        }
+
+        const target = this.path[this.pathIndex];
+        const dx = target.x - this.x;
+        const dy = target.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < 0.1) {
+            this.pathIndex++;
+            return;
+        }
+
+        const moveSpeed = this.speed * dt;
+        this.x += (dx / dist) * Math.min(moveSpeed, dist);
+        this.y += (dy / dist) * Math.min(moveSpeed, dist);
+    }
+
+    updateAttacking(dt) {
+        if (!this.target || this.target.health <= 0) {
+            this.target = null;
+            this.state = 'idle';
+            return;
+        }
+
+        const dx = this.target.x - this.x;
+        const dy = this.target.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > this.attackRange + (this.target.size || 1)) {
+            this.moveTo(this.target.x, this.target.y);
+            return;
+        }
+
+        if (this.attackCooldown <= 0) {
+            this.attack(this.target);
+            this.attackCooldown = this.attackSpeed;
+        }
+    }
+
+    updateHarvesting(dt) {
+        if (!this.harvestTarget || this.harvestTarget.depleted) {
+            this.harvestTarget = null;
+            this.state = 'idle';
+            return;
+        }
+
+        const dx = this.harvestTarget.x - this.x;
+        const dy = this.harvestTarget.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > 1.5) {
+            this.moveTo(this.harvestTarget.x, this.harvestTarget.y);
+            return;
+        }
+
+        if (this.attackCooldown <= 0) {
+            const harvested = this.harvestTarget.harvest(10);
+            if (harvested > 0) {
+                this.carryingResource = this.harvestTarget.resourceType;
+                this.carryAmount += harvested;
+                sound.play('harvest');
+            }
+
+            if (this.carryAmount >= 20 || this.harvestTarget.depleted) {
+                this.state = 'returning';
+                const townhall = this.game.findNearestBuilding(this, 'townhall');
+                if (townhall) {
+                    this.moveTo(townhall.x, townhall.y);
+                }
+            }
+            this.attackCooldown = 0.5;
+        }
+    }
+
+    updateReturning(dt) {
+        const townhall = this.game.findNearestBuilding(this, 'townhall');
+        if (!townhall) {
+            this.state = 'idle';
+            return;
+        }
+
+        const dx = townhall.x - this.x;
+        const dy = townhall.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (this.path.length > 0 && this.pathIndex < this.path.length) {
+            this.updateMoving(dt);
+            return;
+        }
+
+        if (dist > townhall.size + 0.5) {
+            this.moveTo(townhall.x, townhall.y);
+            return;
+        }
+
+        // Deposit resources
+        if (this.carryingResource === 'gold') {
+            this.game.gold += this.carryAmount;
+        } else if (this.carryingResource === 'wood') {
+            this.game.wood += this.carryAmount;
+        }
+        this.carryAmount = 0;
+        this.carryingResource = null;
+
+        // Go back to harvesting
+        if (this.harvestTarget && !this.harvestTarget.depleted) {
+            this.state = 'harvesting';
+            this.moveTo(this.harvestTarget.x, this.harvestTarget.y);
+        } else {
+            this.state = 'idle';
+        }
+    }
+
+    updateBuilding(dt) {
+        if (!this.buildTarget) {
+            this.state = 'idle';
+            return;
+        }
+
+        const dx = this.buildTarget.x - this.x;
+        const dy = this.buildTarget.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist > this.buildTarget.size + 0.5) {
+            this.moveTo(this.buildTarget.x, this.buildTarget.y);
+            return;
+        }
+
+        // Building progress
+        this.buildTarget.buildProgress += dt * 20;
+        if (this.buildTarget.buildProgress >= 100) {
+            this.buildTarget.buildProgress = 100;
+            this.buildTarget.underConstruction = false;
+            sound.play('complete');
+            this.game.showMessage(`${this.buildTarget.type} construction complete!`);
+            this.buildTarget = null;
+            this.state = 'idle';
+        }
+    }
+
+    updateIdle(dt) {
+        // Auto-attack nearby enemies
+        if (this.type !== 'worker') {
+            const enemy = this.game.findNearestEnemy(this, 5);
+            if (enemy) {
+                this.target = enemy;
+                this.state = 'attacking';
+            }
+        }
+    }
+
+    moveTo(x, y) {
+        this.path = this.game.pathfinding.findPath(this.x, this.y, x, y);
+        this.pathIndex = 0;
+        if (this.path.length > 0) {
+            this.state = 'moving';
+        }
+        sound.play('move');
+    }
+
+    attack(target) {
+        target.takeDamage(this.attackDamage);
+        sound.play('attack');
+    }
+
+    render(ctx) {
+        const screenX = (this.x - 0.5) * CONFIG.TILE_SIZE - this.game.camera.x;
+        const screenY = (this.y - 0.5) * CONFIG.TILE_SIZE - this.game.camera.y;
+
+        // Selection circle
+        if (this.selected) {
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(screenX + 16, screenY + 28, 14, 6, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Unit sprite
+        const sprite = this.game.sprites.get(this.type);
+        if (sprite) {
+            ctx.drawImage(sprite, screenX, screenY);
+        }
+
+        // Health bar
+        if (this.health < this.maxHealth) {
+            const barWidth = 28;
+            const barHeight = 4;
+            const barX = screenX + 2;
+            const barY = screenY - 6;
+
+            ctx.fillStyle = '#333';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+
+            const healthPercent = this.health / this.maxHealth;
+            ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
+            ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+        }
+
+        // Resource indicator
+        if (this.carryAmount > 0) {
+            ctx.fillStyle = this.carryingResource === 'gold' ? '#ffd700' : '#8b4513';
+            ctx.fillRect(screenX + 24, screenY + 8, 8, 8);
+        }
+    }
+
+    getActions() {
+        if (this.type === 'worker') {
+            return ['move', 'stop', 'buildTownhall', 'buildBarracks', 'buildTower', 'buildFarm', 'buildBlacksmith'];
+        }
+        return ['move', 'stop', 'attack'];
+    }
+}
+
+class Building extends Entity {
+    constructor(game, x, y, owner, type) {
+        super(game, x, y, owner);
+        this.type = type;
+        this.size = 2;
+        this.underConstruction = true;
+        this.buildProgress = 0;
+        this.rallyPoint = { x: x + 3, y: y + 3 };
+        this.trainQueue = [];
+        this.trainProgress = 0;
+
+        this.applyTypeStats();
+    }
+
+    applyTypeStats() {
+        const stats = {
+            townhall: { health: 1500, size: 3, supply: 10 },
+            barracks: { health: 800, size: 2, supply: 0 },
+            tower: { health: 500, size: 1.5, supply: 0, attackRange: 7, attackDamage: 20 },
+            farm: { health: 400, size: 2, supply: 6 },
+            blacksmith: { health: 600, size: 2, supply: 0 },
+            goldmine: { health: 9999, size: 2, supply: 0 },
+            enemyBase: { health: 2000, size: 3, supply: 0 },
+        };
+
+        const s = stats[this.type] || stats.barracks;
+        this.maxHealth = s.health;
+        this.health = s.health;
+        this.size = s.size;
+        this.supplyProvided = s.supply;
+        this.attackRange = s.attackRange || 0;
+        this.attackDamage = s.attackDamage || 0;
+        this.attackCooldown = 0;
+    }
+
+    update(dt) {
+        if (this.underConstruction) return;
+
+        // Tower attacking
+        if (this.attackRange > 0) {
+            this.attackCooldown = Math.max(0, this.attackCooldown - dt);
+            if (this.attackCooldown <= 0) {
+                const enemy = this.game.findNearestEnemy(this, this.attackRange);
+                if (enemy) {
+                    enemy.takeDamage(this.attackDamage);
+                    sound.play('attack');
+                    this.attackCooldown = 1;
+                }
+            }
+        }
+
+        // Training units
+        if (this.trainQueue.length > 0) {
+            this.trainProgress += dt * 10;
+            const trainTime = this.getTrainTime(this.trainQueue[0]);
+
+            if (this.trainProgress >= trainTime) {
+                const unitType = this.trainQueue.shift();
+                this.trainProgress = 0;
+
+                // Spawn unit at rally point
+                const unit = new Unit(this.game, this.rallyPoint.x, this.rallyPoint.y, this.owner, unitType);
+                this.game.addEntity(unit);
+                sound.play('complete');
+                this.game.showMessage(`${unitType} trained!`);
+            }
+        }
+    }
+
+    getTrainTime(unitType) {
+        const times = { worker: 20, soldier: 30, archer: 25, knight: 50 };
+        return times[unitType] || 30;
+    }
+
+    train(unitType) {
+        const costs = {
+            worker: { gold: 50, wood: 0, supply: 1 },
+            soldier: { gold: 100, wood: 0, supply: 2 },
+            archer: { gold: 80, wood: 50, supply: 2 },
+            knight: { gold: 200, wood: 100, supply: 4 },
+        };
+
+        const cost = costs[unitType];
+        if (!cost) return;
+
+        if (this.game.gold < cost.gold || this.game.wood < cost.wood) {
+            this.game.showMessage('Not enough resources!');
+            sound.play('error');
+            return;
+        }
+
+        if (this.game.supply + cost.supply > this.game.supplyMax) {
+            this.game.showMessage('Not enough supply! Build more farms.');
+            sound.play('error');
+            return;
+        }
+
+        this.game.gold -= cost.gold;
+        this.game.wood -= cost.wood;
+        this.game.supply += cost.supply;
+        this.trainQueue.push(unitType);
+        sound.play('build');
+    }
+
+    render(ctx) {
+        const screenX = (this.x - this.size/2) * CONFIG.TILE_SIZE - this.game.camera.x;
+        const screenY = (this.y - this.size/2) * CONFIG.TILE_SIZE - this.game.camera.y;
+        const width = this.size * CONFIG.TILE_SIZE;
+        const height = this.size * CONFIG.TILE_SIZE;
+
+        // Selection indicator
+        if (this.selected) {
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(screenX - 2, screenY - 2, width + 4, height + 4);
+        }
+
+        // Building sprite
+        const sprite = this.game.sprites.get(this.type);
+        if (sprite) {
+            if (this.underConstruction) {
+                ctx.globalAlpha = 0.5 + (this.buildProgress / 200);
+            }
+            ctx.drawImage(sprite, screenX, screenY, width, height);
+            ctx.globalAlpha = 1;
+        }
+
+        // Construction progress
+        if (this.underConstruction) {
+            ctx.fillStyle = '#333';
+            ctx.fillRect(screenX, screenY - 10, width, 6);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(screenX, screenY - 10, width * (this.buildProgress / 100), 6);
+        }
+
+        // Health bar
+        if (this.health < this.maxHealth && !this.underConstruction) {
+            const barY = screenY - 10;
+            ctx.fillStyle = '#333';
+            ctx.fillRect(screenX, barY, width, 6);
+            ctx.fillStyle = this.health > this.maxHealth * 0.5 ? '#00ff00' : '#ff0000';
+            ctx.fillRect(screenX, barY, width * (this.health / this.maxHealth), 6);
+        }
+    }
+
+    getActions() {
+        if (this.underConstruction) return [];
+
+        switch(this.type) {
+            case 'townhall':
+                return ['trainWorker', 'setRally'];
+            case 'barracks':
+                const actions = ['trainSoldier', 'setRally'];
+                if (this.game.tech.archery) actions.splice(1, 0, 'trainArcher');
+                if (this.game.tech.cavalry) actions.splice(2, 0, 'trainKnight');
+                return actions;
+            default:
+                return [];
+        }
+    }
+}
+
+class Resource extends Entity {
+    constructor(game, x, y, type, amount) {
+        super(game, x, y, 'neutral');
+        this.resourceType = type;
+        this.amount = amount;
+        this.maxAmount = amount;
+        this.depleted = false;
+        this.size = type === 'gold' ? 2 : 1;
+    }
+
+    harvest(amount) {
+        const harvested = Math.min(amount, this.amount);
+        this.amount -= harvested;
+
+        if (this.amount <= 0) {
+            this.depleted = true;
+            if (this.resourceType === 'wood') {
+                this.game.removeEntity(this);
+            }
+        }
+
+        return harvested;
+    }
+
+    render(ctx) {
+        if (this.depleted && this.resourceType === 'gold') {
+            return; // Gold mines stay but look depleted
+        }
+
+        const screenX = (this.x - this.size/2) * CONFIG.TILE_SIZE - this.game.camera.x;
+        const screenY = (this.y - this.size/2) * CONFIG.TILE_SIZE - this.game.camera.y;
+
+        if (this.resourceType === 'wood') {
+            const sprite = this.game.sprites.get('tree');
+            if (sprite) {
+                ctx.drawImage(sprite, screenX, screenY - 8);
+            }
+        } else if (this.resourceType === 'gold') {
+            const sprite = this.game.sprites.get('goldmine');
+            if (sprite) {
+                ctx.drawImage(sprite, screenX, screenY, this.size * CONFIG.TILE_SIZE, this.size * CONFIG.TILE_SIZE);
+            }
+
+            // Show remaining gold
+            if (this.amount > 0) {
+                ctx.fillStyle = '#ffd700';
+                ctx.font = '10px monospace';
+                ctx.fillText(this.amount, screenX + 20, screenY - 5);
+            }
+        }
+    }
+
+    update(dt) {}
+}
+
+// ============================================
+// ENEMY AI
+// ============================================
+class EnemyAI {
+    constructor(game) {
+        this.game = game;
+        this.spawnTimer = 0;
+        this.waveNumber = 0;
+        this.spawnInterval = 60; // seconds between waves
+        this.difficulty = 1;
+    }
+
+    update(dt) {
+        this.spawnTimer += dt;
+
+        if (this.spawnTimer >= this.spawnInterval) {
+            this.spawnWave();
+            this.spawnTimer = 0;
+            this.waveNumber++;
+            this.difficulty += 0.2;
+        }
+
+        // Control enemy units
+        for (const entity of this.game.entities) {
+            if (entity.owner === 'enemy' && entity instanceof Unit) {
+                this.controlUnit(entity);
+            }
+        }
+    }
+
+    spawnWave() {
+        const enemyBase = this.game.entities.find(e => e.type === 'enemyBase');
+        if (!enemyBase) return;
+
+        const count = Math.floor(3 + this.waveNumber * this.difficulty);
+        this.game.showMessage(`Wave ${this.waveNumber + 1}: ${count} enemies approaching!`);
+
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * Math.PI * 2;
+            const x = enemyBase.x + Math.cos(angle) * 3;
+            const y = enemyBase.y + Math.sin(angle) * 3;
+
+            const grunt = new Unit(this.game, x, y, 'enemy', 'enemyGrunt');
+            grunt.health = grunt.maxHealth * this.difficulty;
+            this.game.addEntity(grunt);
+        }
+    }
+
+    controlUnit(unit) {
+        if (unit.state !== 'idle') return;
+
+        // Find nearest player entity to attack
+        const target = this.game.findNearestPlayerEntity(unit);
+        if (target) {
+            unit.target = target;
+            unit.state = 'attacking';
+            unit.moveTo(target.x, target.y);
+        }
+    }
+}
+
+// ============================================
+// MAIN GAME CLASS
+// ============================================
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('game-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.minimap = document.getElementById('minimap');
+        this.minimapCtx = this.minimap.getContext('2d');
+
+        this.sprites = new SpriteRenderer();
+        this.pathfinding = new Pathfinding(this);
+        this.enemyAI = new EnemyAI(this);
+
+        this.entities = [];
+        this.selectedEntities = [];
+
+        this.gold = 500;
+        this.wood = 500;
+        this.supply = 0;
+        this.supplyMax = 0;
+
+        this.camera = { x: 0, y: 0 };
+        this.mapTiles = [];
+
+        this.mouse = { x: 0, y: 0, down: false };
+        this.selectionBox = null;
+        this.buildingPlacement = null;
+
+        this.keys = {};
+        this.gameTime = 0;
+
+        this.tech = {
+            attack1: false,
+            attack2: false,
+            defense1: false,
+            defense2: false,
+            speed1: false,
+            archery: false,
+            cavalry: false,
+        };
+
+        this.init();
+    }
+
+    init() {
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+
+        this.setupInput();
+        this.generateMap();
+        this.setupInitialEntities();
+        this.setupIcons();
+
+        this.lastTime = performance.now();
+        this.gameLoop();
+    }
+
+    resizeCanvas() {
+        const container = document.getElementById('game-container');
+        this.canvas.width = container.clientWidth - 280;
+        this.canvas.height = container.clientHeight;
+    }
+
+    setupInput() {
+        this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+        this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        document.addEventListener('keydown', (e) => this.onKeyDown(e));
+        document.addEventListener('keyup', (e) => this.onKeyUp(e));
+    }
+
+    onMouseDown(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        this.mouse.x = e.clientX - rect.left;
+        this.mouse.y = e.clientY - rect.top;
+        this.mouse.down = true;
+
+        sound.resume();
+
+        if (e.button === 0) { // Left click
+            if (this.buildingPlacement) {
+                this.placeBuilding();
+            } else {
+                this.selectionBox = {
+                    startX: this.mouse.x,
+                    startY: this.mouse.y,
+                    endX: this.mouse.x,
+                    endY: this.mouse.y
+                };
+            }
+        } else if (e.button === 2) { // Right click
+            this.rightClickAction();
+        }
+    }
+
+    onMouseUp(e) {
+        this.mouse.down = false;
+
+        if (e.button === 0 && this.selectionBox) {
+            this.performSelection();
+            this.selectionBox = null;
+        }
+    }
+
+    onMouseMove(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        this.mouse.x = e.clientX - rect.left;
+        this.mouse.y = e.clientY - rect.top;
+
+        if (this.selectionBox && this.mouse.down) {
+            this.selectionBox.endX = this.mouse.x;
+            this.selectionBox.endY = this.mouse.y;
+        }
+    }
+
+    onKeyDown(e) {
+        this.keys[e.key.toLowerCase()] = true;
+
+        if (e.key === 'Escape') {
+            this.buildingPlacement = null;
+            this.clearSelection();
+        }
+        if (e.key === 't' || e.key === 'T') {
+            openTechTree();
+        }
+        if (e.key === 'F5') {
+            e.preventDefault();
+            saveGame();
+        }
+        if (e.key === 'F9') {
+            e.preventDefault();
+            loadGame();
+        }
+
+        // Hotkeys for actions
+        if (e.key === 'q') this.executeAction('trainWorker');
+        if (e.key === 'w') this.executeAction('trainSoldier');
+        if (e.key === 'e') this.executeAction('trainArcher');
+        if (e.key === 'r') this.executeAction('trainKnight');
+        if (e.key === 'b') this.executeAction('buildBarracks');
+        if (e.key === 'v') this.executeAction('buildTower');
+        if (e.key === 'f') this.executeAction('buildFarm');
+        if (e.key === 'h') this.executeAction('buildTownhall');
+        if (e.key === 's') this.executeAction('stop');
+    }
+
+    onKeyUp(e) {
+        this.keys[e.key.toLowerCase()] = false;
+    }
+
+    rightClickAction() {
+        if (this.selectedEntities.length === 0) return;
+
+        const worldX = (this.mouse.x + this.camera.x) / CONFIG.TILE_SIZE;
+        const worldY = (this.mouse.y + this.camera.y) / CONFIG.TILE_SIZE;
+
+        // Check if clicking on an entity
+        const clickedEntity = this.getEntityAt(worldX, worldY);
+
+        for (const unit of this.selectedEntities) {
+            if (!(unit instanceof Unit)) continue;
+
+            if (clickedEntity) {
+                if (clickedEntity.owner === 'enemy' ||
+                    (clickedEntity.owner !== unit.owner && clickedEntity instanceof Unit)) {
+                    // Attack enemy
+                    unit.target = clickedEntity;
+                    unit.state = 'attacking';
+                    unit.moveTo(clickedEntity.x, clickedEntity.y);
+                } else if (clickedEntity instanceof Resource && unit.type === 'worker') {
+                    // Harvest resource
+                    unit.harvestTarget = clickedEntity;
+                    unit.state = 'harvesting';
+                    unit.moveTo(clickedEntity.x, clickedEntity.y);
+                } else if (clickedEntity instanceof Building && clickedEntity.underConstruction && unit.type === 'worker') {
+                    // Help build
+                    unit.buildTarget = clickedEntity;
+                    unit.state = 'building';
+                    unit.moveTo(clickedEntity.x, clickedEntity.y);
+                }
+            } else {
+                // Move to location
+                unit.moveTo(worldX, worldY);
+                unit.target = null;
+                unit.harvestTarget = null;
+            }
+        }
+    }
+
+    performSelection() {
+        const box = this.selectionBox;
+        const minX = Math.min(box.startX, box.endX);
+        const maxX = Math.max(box.startX, box.endX);
+        const minY = Math.min(box.startY, box.endY);
+        const maxY = Math.max(box.startY, box.endY);
+
+        const isClick = Math.abs(box.endX - box.startX) < 5 && Math.abs(box.endY - box.startY) < 5;
+
+        this.clearSelection();
+
+        if (isClick) {
+            // Single click selection
+            const worldX = (this.mouse.x + this.camera.x) / CONFIG.TILE_SIZE;
+            const worldY = (this.mouse.y + this.camera.y) / CONFIG.TILE_SIZE;
+            const entity = this.getEntityAt(worldX, worldY);
+
+            if (entity && entity.owner === 'player') {
+                entity.selected = true;
+                this.selectedEntities.push(entity);
+                sound.play('select');
+            }
+        } else {
+            // Box selection
+            for (const entity of this.entities) {
+                if (entity.owner !== 'player') continue;
+                if (!(entity instanceof Unit)) continue;
+
+                const screenX = (entity.x - 0.5) * CONFIG.TILE_SIZE - this.camera.x;
+                const screenY = (entity.y - 0.5) * CONFIG.TILE_SIZE - this.camera.y;
+
+                if (screenX >= minX && screenX <= maxX && screenY >= minY && screenY <= maxY) {
+                    entity.selected = true;
+                    this.selectedEntities.push(entity);
+                }
+            }
+
+            if (this.selectedEntities.length > 0) {
+                sound.play('select');
+            }
+        }
+
+        this.updateUI();
+    }
+
+    clearSelection() {
+        for (const entity of this.selectedEntities) {
+            entity.selected = false;
+        }
+        this.selectedEntities = [];
+    }
+
+    getEntityAt(worldX, worldY) {
+        // Check units first (smaller, on top)
+        for (const entity of this.entities) {
+            if (entity instanceof Unit) {
+                const dx = entity.x - worldX;
+                const dy = entity.y - worldY;
+                if (Math.sqrt(dx*dx + dy*dy) < 0.8) {
+                    return entity;
+                }
+            }
+        }
+
+        // Then buildings/resources
+        for (const entity of this.entities) {
+            if (!(entity instanceof Unit)) {
+                const size = entity.size || 1;
+                if (worldX >= entity.x - size/2 && worldX <= entity.x + size/2 &&
+                    worldY >= entity.y - size/2 && worldY <= entity.y + size/2) {
+                    return entity;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    generateMap() {
+        // Initialize tile map
+        for (let y = 0; y < CONFIG.MAP_HEIGHT; y++) {
+            this.mapTiles[y] = [];
+            for (let x = 0; x < CONFIG.MAP_WIDTH; x++) {
+                // 0 = grass, 1 = dirt, 2 = water
+                this.mapTiles[y][x] = Math.random() < 0.1 ? 1 : 0;
+            }
+        }
+    }
+
+    setupInitialEntities() {
+        // Player base area
+        const townhall = new Building(this, 10, 12, 'player', 'townhall');
+        townhall.underConstruction = false;
+        townhall.buildProgress = 100;
+        this.addEntity(townhall);
+
+        // Starting workers
+        for (let i = 0; i < 5; i++) {
+            const worker = new Unit(this, 12 + i % 3, 15 + Math.floor(i / 3), 'player', 'worker');
+            this.addEntity(worker);
+        }
+
+        // Gold mines
+        const goldMine1 = new Resource(this, 5, 8, 'gold', 10000);
+        goldMine1.underConstruction = false;
+        this.addEntity(goldMine1);
+
+        const goldMine2 = new Resource(this, 50, 35, 'gold', 10000);
+        goldMine2.underConstruction = false;
+        this.addEntity(goldMine2);
+
+        // Trees (forest areas)
+        for (let i = 0; i < 80; i++) {
+            const x = 18 + (i % 10) * 1.5 + Math.random() * 0.5;
+            const y = 5 + Math.floor(i / 10) * 1.5 + Math.random() * 0.5;
+            this.addEntity(new Resource(this, x, y, 'wood', 100));
+        }
+
+        for (let i = 0; i < 60; i++) {
+            const x = 3 + (i % 8) * 1.5 + Math.random() * 0.5;
+            const y = 25 + Math.floor(i / 8) * 1.5 + Math.random() * 0.5;
+            this.addEntity(new Resource(this, x, y, 'wood', 100));
+        }
+
+        // Enemy base (top right)
+        const enemyBase = new Building(this, 52, 10, 'enemy', 'enemyBase');
+        enemyBase.underConstruction = false;
+        enemyBase.buildProgress = 100;
+        this.addEntity(enemyBase);
+
+        // Initial enemy units
+        for (let i = 0; i < 3; i++) {
+            const grunt = new Unit(this, 50 + i, 12, 'enemy', 'enemyGrunt');
+            this.addEntity(grunt);
+        }
+
+        this.updateSupply();
+    }
+
+    addEntity(entity) {
+        this.entities.push(entity);
+        this.updateSupply();
+    }
+
+    removeEntity(entity) {
+        const index = this.entities.indexOf(entity);
+        if (index > -1) {
+            this.entities.splice(index, 1);
+        }
+
+        const selIndex = this.selectedEntities.indexOf(entity);
+        if (selIndex > -1) {
+            this.selectedEntities.splice(selIndex, 1);
+        }
+
+        this.updateSupply();
+    }
+
+    updateSupply() {
+        let provided = 0;
+        let used = 0;
+
+        for (const entity of this.entities) {
+            if (entity.owner === 'player') {
+                if (entity instanceof Building && !entity.underConstruction) {
+                    provided += entity.supplyProvided || 0;
+                }
+                if (entity instanceof Unit) {
+                    const costs = { worker: 1, soldier: 2, archer: 2, knight: 4 };
+                    used += costs[entity.type] || 1;
+                }
+            }
+        }
+
+        this.supplyMax = provided;
+        this.supply = used;
+    }
+
+    isWalkable(x, y) {
+        if (x < 0 || x >= CONFIG.MAP_WIDTH || y < 0 || y >= CONFIG.MAP_HEIGHT) return false;
+
+        // Check for buildings
+        for (const entity of this.entities) {
+            if (entity instanceof Building || (entity instanceof Resource && entity.resourceType === 'gold')) {
+                const size = entity.size || 1;
+                if (x >= entity.x - size/2 && x < entity.x + size/2 &&
+                    y >= entity.y - size/2 && y < entity.y + size/2) {
+                    return false;
+                }
+            }
+        }
+
+        // Check for trees
+        for (const entity of this.entities) {
+            if (entity instanceof Resource && entity.resourceType === 'wood' && !entity.depleted) {
+                if (Math.abs(x - entity.x) < 0.8 && Math.abs(y - entity.y) < 0.8) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    findNearestBuilding(unit, type) {
+        let nearest = null;
+        let nearestDist = Infinity;
+
+        for (const entity of this.entities) {
+            if (entity instanceof Building && entity.owner === unit.owner && entity.type === type) {
+                const dx = entity.x - unit.x;
+                const dy = entity.y - unit.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = entity;
+                }
+            }
+        }
+
+        return nearest;
+    }
+
+    findNearestEnemy(entity, range) {
+        let nearest = null;
+        let nearestDist = Infinity;
+
+        const enemyOwner = entity.owner === 'player' ? 'enemy' : 'player';
+
+        for (const other of this.entities) {
+            if (other.owner === enemyOwner && other.health > 0) {
+                const dx = other.x - entity.x;
+                const dy = other.y - entity.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < range && dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = other;
+                }
+            }
+        }
+
+        return nearest;
+    }
+
+    findNearestPlayerEntity(enemy) {
+        let nearest = null;
+        let nearestDist = Infinity;
+
+        for (const entity of this.entities) {
+            if (entity.owner === 'player' && entity.health > 0) {
+                const dx = entity.x - enemy.x;
+                const dy = entity.y - enemy.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearest = entity;
+                }
+            }
+        }
+
+        return nearest;
+    }
+
+    setupIcons() {
+        // Draw gold icon
+        const goldIcon = document.getElementById('gold-icon');
+        goldIcon.width = 24;
+        goldIcon.height = 24;
+        const goldCtx = goldIcon.getContext('2d');
+        goldCtx.drawImage(this.sprites.get('goldIcon'), 0, 0);
+
+        // Draw wood icon
+        const woodIcon = document.getElementById('wood-icon');
+        woodIcon.width = 24;
+        woodIcon.height = 24;
+        const woodCtx = woodIcon.getContext('2d');
+        woodCtx.drawImage(this.sprites.get('woodIcon'), 0, 0);
+    }
+
+    startBuildingPlacement(buildingType) {
+        this.buildingPlacement = {
+            type: buildingType,
+            valid: false
+        };
+    }
+
+    placeBuilding() {
+        if (!this.buildingPlacement) return;
+
+        const worldX = Math.floor((this.mouse.x + this.camera.x) / CONFIG.TILE_SIZE) + 0.5;
+        const worldY = Math.floor((this.mouse.y + this.camera.y) / CONFIG.TILE_SIZE) + 0.5;
+
+        const costs = {
+            townhall: { gold: 400, wood: 200 },
+            barracks: { gold: 200, wood: 100 },
+            tower: { gold: 150, wood: 100 },
+            farm: { gold: 100, wood: 50 },
+            blacksmith: { gold: 200, wood: 150 },
+        };
+
+        const cost = costs[this.buildingPlacement.type];
+
+        if (this.gold < cost.gold || this.wood < cost.wood) {
+            this.showMessage('Not enough resources!');
+            sound.play('error');
+            return;
+        }
+
+        // Check if location is valid
+        if (!this.canPlaceBuilding(worldX, worldY, 2)) {
+            this.showMessage('Cannot build here!');
+            sound.play('error');
+            return;
+        }
+
+        this.gold -= cost.gold;
+        this.wood -= cost.wood;
+
+        const building = new Building(this, worldX, worldY, 'player', this.buildingPlacement.type);
+        this.addEntity(building);
+
+        // Send selected workers to build
+        for (const unit of this.selectedEntities) {
+            if (unit instanceof Unit && unit.type === 'worker') {
+                unit.buildTarget = building;
+                unit.state = 'building';
+                unit.moveTo(worldX, worldY);
+            }
+        }
+
+        sound.play('build');
+        this.buildingPlacement = null;
+    }
+
+    canPlaceBuilding(x, y, size) {
+        // Check map bounds
+        if (x - size/2 < 0 || x + size/2 >= CONFIG.MAP_WIDTH ||
+            y - size/2 < 0 || y + size/2 >= CONFIG.MAP_HEIGHT) {
+            return false;
+        }
+
+        // Check for existing entities
+        for (const entity of this.entities) {
+            if (entity instanceof Building || entity instanceof Resource) {
+                const eSize = entity.size || 1;
+                const dx = Math.abs(entity.x - x);
+                const dy = Math.abs(entity.y - y);
+                if (dx < (size + eSize) / 2 && dy < (size + eSize) / 2) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    executeAction(action) {
+        if (this.selectedEntities.length === 0) return;
+
+        const entity = this.selectedEntities[0];
+
+        switch(action) {
+            case 'trainWorker':
+                if (entity instanceof Building && entity.type === 'townhall') {
+                    entity.train('worker');
+                }
+                break;
+            case 'trainSoldier':
+                if (entity instanceof Building && entity.type === 'barracks') {
+                    entity.train('soldier');
+                }
+                break;
+            case 'trainArcher':
+                if (entity instanceof Building && entity.type === 'barracks' && this.tech.archery) {
+                    entity.train('archer');
+                }
+                break;
+            case 'trainKnight':
+                if (entity instanceof Building && entity.type === 'barracks' && this.tech.cavalry) {
+                    entity.train('knight');
+                }
+                break;
+            case 'buildTownhall':
+                this.startBuildingPlacement('townhall');
+                break;
+            case 'buildBarracks':
+                this.startBuildingPlacement('barracks');
+                break;
+            case 'buildTower':
+                this.startBuildingPlacement('tower');
+                break;
+            case 'buildFarm':
+                this.startBuildingPlacement('farm');
+                break;
+            case 'buildBlacksmith':
+                this.startBuildingPlacement('blacksmith');
+                break;
+            case 'stop':
+                for (const unit of this.selectedEntities) {
+                    if (unit instanceof Unit) {
+                        unit.state = 'idle';
+                        unit.path = [];
+                        unit.target = null;
+                    }
+                }
+                break;
+        }
+    }
+
+    showMessage(msg) {
+        document.getElementById('game-messages').textContent = msg;
+    }
+
+    updateUI() {
+        document.getElementById('gold-count').textContent = Math.floor(this.gold);
+        document.getElementById('wood-count').textContent = Math.floor(this.wood);
+        document.getElementById('supply-count').textContent = this.supply;
+        document.getElementById('supply-max').textContent = this.supplyMax;
+
+        const minutes = Math.floor(this.gameTime / 60);
+        const seconds = Math.floor(this.gameTime % 60);
+        document.getElementById('game-time').textContent =
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        // Selection info
+        const selectionDetails = document.getElementById('selection-details');
+        const healthContainer = document.getElementById('health-bar-container');
+        const buildQueue = document.getElementById('build-queue');
+
+        if (this.selectedEntities.length === 0) {
+            selectionDetails.textContent = 'No unit selected';
+            healthContainer.style.display = 'none';
+            buildQueue.innerHTML = '';
+        } else if (this.selectedEntities.length === 1) {
+            const entity = this.selectedEntities[0];
+            let info = `${entity.type.charAt(0).toUpperCase() + entity.type.slice(1)}`;
+
+            if (entity instanceof Unit) {
+                info += `\nDamage: ${entity.attackDamage}`;
+                info += `\nRange: ${entity.attackRange.toFixed(1)}`;
+            }
+
+            selectionDetails.innerHTML = info.replace(/\n/g, '<br>');
+
+            healthContainer.style.display = 'block';
+            document.getElementById('health-fill').style.width = `${(entity.health / entity.maxHealth) * 100}%`;
+            document.getElementById('health-text').textContent = `${Math.floor(entity.health)}/${entity.maxHealth}`;
+
+            // Build queue
+            if (entity instanceof Building && entity.trainQueue.length > 0) {
+                buildQueue.innerHTML = '';
+                entity.trainQueue.forEach((unitType, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'queue-item';
+                    if (i === 0) {
+                        const progress = document.createElement('div');
+                        progress.className = 'queue-progress';
+                        progress.style.width = `${(entity.trainProgress / entity.getTrainTime(unitType)) * 100}%`;
+                        item.appendChild(progress);
+                    }
+                    buildQueue.appendChild(item);
+                });
+            } else {
+                buildQueue.innerHTML = '';
+            }
+        } else {
+            selectionDetails.textContent = `${this.selectedEntities.length} units selected`;
+            healthContainer.style.display = 'none';
+            buildQueue.innerHTML = '';
+        }
+
+        // Action buttons
+        this.updateActionButtons();
+    }
+
+    updateActionButtons() {
+        const container = document.getElementById('action-buttons');
+        container.innerHTML = '';
+
+        if (this.selectedEntities.length === 0) return;
+
+        const entity = this.selectedEntities[0];
+        const actions = entity.getActions ? entity.getActions() : [];
+
+        const actionInfo = {
+            trainWorker: { name: 'Worker', key: 'Q', cost: '50g' },
+            trainSoldier: { name: 'Soldier', key: 'W', cost: '100g' },
+            trainArcher: { name: 'Archer', key: 'E', cost: '80g 50w' },
+            trainKnight: { name: 'Knight', key: 'R', cost: '200g 100w' },
+            buildTownhall: { name: 'Town Hall', key: 'H', cost: '400g 200w' },
+            buildBarracks: { name: 'Barracks', key: 'B', cost: '200g 100w' },
+            buildTower: { name: 'Tower', key: 'V', cost: '150g 100w' },
+            buildFarm: { name: 'Farm', key: 'F', cost: '100g 50w' },
+            buildBlacksmith: { name: 'Smith', key: 'K', cost: '200g 150w' },
+            move: { name: 'Move', key: 'M', cost: '' },
+            stop: { name: 'Stop', key: 'S', cost: '' },
+            attack: { name: 'Attack', key: 'A', cost: '' },
+            setRally: { name: 'Rally', key: 'Y', cost: '' },
+        };
+
+        for (const action of actions) {
+            const info = actionInfo[action] || { name: action, key: '', cost: '' };
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.innerHTML = `<div>${info.name}</div><div style="font-size:8px">[${info.key}]</div>`;
+            if (info.cost) {
+                btn.innerHTML += `<div style="font-size:8px;color:#ffd700">${info.cost}</div>`;
+            }
+            btn.onclick = () => this.executeAction(action);
+            container.appendChild(btn);
+        }
+    }
+
+    update(dt) {
+        this.gameTime += dt;
+
+        // Camera movement with keyboard
+        if (this.keys['arrowleft'] || this.keys['a']) this.camera.x -= CONFIG.CAMERA_SPEED;
+        if (this.keys['arrowright'] || this.keys['d']) this.camera.x += CONFIG.CAMERA_SPEED;
+        if (this.keys['arrowup'] || this.keys['w']) this.camera.y -= CONFIG.CAMERA_SPEED;
+        if (this.keys['arrowdown'] || this.keys['s']) this.camera.y += CONFIG.CAMERA_SPEED;
+
+        // Camera edge scrolling
+        if (this.mouse.x < CONFIG.SCROLL_EDGE) this.camera.x -= CONFIG.CAMERA_SPEED;
+        if (this.mouse.x > this.canvas.width - CONFIG.SCROLL_EDGE) this.camera.x += CONFIG.CAMERA_SPEED;
+        if (this.mouse.y < CONFIG.SCROLL_EDGE) this.camera.y -= CONFIG.CAMERA_SPEED;
+        if (this.mouse.y > this.canvas.height - CONFIG.SCROLL_EDGE) this.camera.y += CONFIG.CAMERA_SPEED;
+
+        // Clamp camera
+        this.camera.x = Math.max(0, Math.min(CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE - this.canvas.width, this.camera.x));
+        this.camera.y = Math.max(0, Math.min(CONFIG.MAP_HEIGHT * CONFIG.TILE_SIZE - this.canvas.height, this.camera.y));
+
+        // Update entities
+        for (const entity of this.entities) {
+            entity.update(dt);
+        }
+
+        // Update enemy AI
+        this.enemyAI.update(dt);
+
+        // Check win/lose conditions
+        this.checkGameState();
+
+        this.updateUI();
+    }
+
+    checkGameState() {
+        const playerBuildings = this.entities.filter(e => e.owner === 'player' && e instanceof Building);
+        const enemyBuildings = this.entities.filter(e => e.owner === 'enemy' && e instanceof Building);
+
+        if (playerBuildings.length === 0 && this.entities.filter(e => e.owner === 'player' && e instanceof Unit).length === 0) {
+            this.showMessage('DEFEAT! Your base has been destroyed!');
+        }
+
+        if (enemyBuildings.length === 0 && this.entities.filter(e => e.owner === 'enemy' && e instanceof Unit).length === 0) {
+            this.showMessage('VICTORY! You have destroyed the enemy!');
+        }
+    }
+
+    render() {
+        // Clear canvas
+        this.ctx.fillStyle = '#2d5a27';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Render map tiles
+        this.renderMap();
+
+        // Render entities (sorted by Y for depth)
+        const sortedEntities = [...this.entities].sort((a, b) => a.y - b.y);
+        for (const entity of sortedEntities) {
+            entity.render(this.ctx);
+        }
+
+        // Render selection box
+        if (this.selectionBox) {
+            this.ctx.strokeStyle = '#00ff00';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(
+                this.selectionBox.startX,
+                this.selectionBox.startY,
+                this.selectionBox.endX - this.selectionBox.startX,
+                this.selectionBox.endY - this.selectionBox.startY
+            );
+        }
+
+        // Render building placement preview
+        if (this.buildingPlacement) {
+            const worldX = Math.floor((this.mouse.x + this.camera.x) / CONFIG.TILE_SIZE);
+            const worldY = Math.floor((this.mouse.y + this.camera.y) / CONFIG.TILE_SIZE);
+            const size = 2 * CONFIG.TILE_SIZE;
+            const screenX = worldX * CONFIG.TILE_SIZE - this.camera.x;
+            const screenY = worldY * CONFIG.TILE_SIZE - this.camera.y;
+
+            const canPlace = this.canPlaceBuilding(worldX + 0.5, worldY + 0.5, 2);
+
+            this.ctx.globalAlpha = 0.5;
+            this.ctx.fillStyle = canPlace ? '#00ff00' : '#ff0000';
+            this.ctx.fillRect(screenX, screenY, size, size);
+            this.ctx.globalAlpha = 1;
+        }
+
+        // Render minimap
+        this.renderMinimap();
+    }
+
+    renderMap() {
+        const startX = Math.floor(this.camera.x / CONFIG.TILE_SIZE);
+        const startY = Math.floor(this.camera.y / CONFIG.TILE_SIZE);
+        const endX = Math.ceil((this.camera.x + this.canvas.width) / CONFIG.TILE_SIZE);
+        const endY = Math.ceil((this.camera.y + this.canvas.height) / CONFIG.TILE_SIZE);
+
+        for (let y = startY; y <= endY; y++) {
+            for (let x = startX; x <= endX; x++) {
+                if (y < 0 || y >= CONFIG.MAP_HEIGHT || x < 0 || x >= CONFIG.MAP_WIDTH) continue;
+
+                const tile = this.mapTiles[y][x];
+                const screenX = x * CONFIG.TILE_SIZE - this.camera.x;
+                const screenY = y * CONFIG.TILE_SIZE - this.camera.y;
+
+                // Base grass color with variation
+                const variation = ((x * 7 + y * 13) % 3) * 10;
+                this.ctx.fillStyle = tile === 1 ?
+                    `rgb(${139 + variation}, ${119 + variation}, ${101 + variation})` :
+                    `rgb(${45 + variation}, ${90 + variation}, ${39 + variation})`;
+                this.ctx.fillRect(screenX, screenY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+            }
+        }
+    }
+
+    renderMinimap() {
+        const scale = this.minimap.width / (CONFIG.MAP_WIDTH * CONFIG.TILE_SIZE);
+
+        // Background
+        this.minimapCtx.fillStyle = '#1a3d16';
+        this.minimapCtx.fillRect(0, 0, this.minimap.width, this.minimap.height);
+
+        // Entities
+        for (const entity of this.entities) {
+            let color = '#888';
+            if (entity.owner === 'player') color = '#4169e1';
+            else if (entity.owner === 'enemy') color = '#ff0000';
+            else if (entity instanceof Resource) {
+                color = entity.resourceType === 'gold' ? '#ffd700' : '#228b22';
+            }
+
+            const size = (entity.size || 1) * CONFIG.TILE_SIZE * scale;
+            this.minimapCtx.fillStyle = color;
+            this.minimapCtx.fillRect(
+                entity.x * CONFIG.TILE_SIZE * scale - size/2,
+                entity.y * CONFIG.TILE_SIZE * scale - size/2,
+                Math.max(2, size),
+                Math.max(2, size)
+            );
+        }
+
+        // Camera view
+        this.minimapCtx.strokeStyle = '#fff';
+        this.minimapCtx.lineWidth = 1;
+        this.minimapCtx.strokeRect(
+            this.camera.x * scale,
+            this.camera.y * scale,
+            this.canvas.width * scale,
+            this.canvas.height * scale
+        );
+    }
+
+    gameLoop() {
+        const now = performance.now();
+        const dt = Math.min((now - this.lastTime) / 1000, 0.1);
+        this.lastTime = now;
+
+        this.update(dt);
+        this.render();
+
+        requestAnimationFrame(() => this.gameLoop());
+    }
+
+    save() {
+        const data = {
+            gold: this.gold,
+            wood: this.wood,
+            gameTime: this.gameTime,
+            tech: this.tech,
+            camera: this.camera,
+            entities: this.entities.map(e => ({
+                type: e.constructor.name,
+                entityType: e.type,
+                x: e.x,
+                y: e.y,
+                owner: e.owner,
+                health: e.health,
+                maxHealth: e.maxHealth,
+                amount: e.amount,
+                resourceType: e.resourceType,
+                underConstruction: e.underConstruction,
+                buildProgress: e.buildProgress,
+            }))
+        };
+        return JSON.stringify(data);
+    }
+
+    load(saveData) {
+        const data = JSON.parse(saveData);
+
+        this.gold = data.gold;
+        this.wood = data.wood;
+        this.gameTime = data.gameTime;
+        this.tech = data.tech;
+        this.camera = data.camera;
+
+        this.entities = [];
+        this.selectedEntities = [];
+
+        for (const e of data.entities) {
+            let entity;
+            if (e.type === 'Unit') {
+                entity = new Unit(this, e.x, e.y, e.owner, e.entityType);
+            } else if (e.type === 'Building') {
+                entity = new Building(this, e.x, e.y, e.owner, e.entityType);
+                entity.underConstruction = e.underConstruction;
+                entity.buildProgress = e.buildProgress;
+            } else if (e.type === 'Resource') {
+                entity = new Resource(this, e.x, e.y, e.resourceType, e.amount);
+            }
+
+            if (entity) {
+                entity.health = e.health;
+                entity.maxHealth = e.maxHealth;
+                this.entities.push(entity);
+            }
+        }
+
+        this.updateSupply();
+    }
+}
+
+// ============================================
+// TECH TREE UI
+// ============================================
+function openTechTree() {
+    const modal = document.getElementById('tech-tree-modal');
+    modal.style.display = 'flex';
+    renderTechTree();
+}
+
+function closeTechTree() {
+    document.getElementById('tech-tree-modal').style.display = 'none';
+}
+
+function renderTechTree() {
+    const grid = document.getElementById('tech-grid');
+    grid.innerHTML = '';
+
+    const techs = [
+        { id: 'attack1', name: 'Improved Weapons', desc: '+5 attack damage', cost: { gold: 150, wood: 50 }, requires: [] },
+        { id: 'attack2', name: 'Advanced Weapons', desc: '+5 more attack damage', cost: { gold: 300, wood: 100 }, requires: ['attack1'] },
+        { id: 'defense1', name: 'Improved Armor', desc: '+20 max health', cost: { gold: 150, wood: 50 }, requires: [] },
+        { id: 'defense2', name: 'Advanced Armor', desc: '+30 more max health', cost: { gold: 300, wood: 100 }, requires: ['defense1'] },
+        { id: 'speed1', name: 'Swift Movement', desc: '+0.5 movement speed', cost: { gold: 200, wood: 0 }, requires: [] },
+        { id: 'archery', name: 'Archery', desc: 'Unlock Archers', cost: { gold: 200, wood: 100 }, requires: [] },
+        { id: 'cavalry', name: 'Cavalry', desc: 'Unlock Knights', cost: { gold: 400, wood: 200 }, requires: ['archery'] },
+    ];
+
+    for (const tech of techs) {
+        const item = document.createElement('div');
+        item.className = 'tech-item';
+
+        const unlocked = game.tech[tech.id];
+        const available = !unlocked && tech.requires.every(r => game.tech[r]);
+        const canAfford = game.gold >= tech.cost.gold && game.wood >= tech.cost.wood;
+
+        if (unlocked) item.classList.add('unlocked');
+        if (available && canAfford) item.classList.add('available');
+
+        item.innerHTML = `
+            <h4>${tech.name}</h4>
+            <p>${tech.desc}</p>
+            <div class="tech-cost">${tech.cost.gold}g ${tech.cost.wood}w</div>
+            ${unlocked ? '<div style="color:#4CAF50">✓ Researched</div>' : ''}
+        `;
+
+        if (available && canAfford && !unlocked) {
+            item.onclick = () => {
+                game.gold -= tech.cost.gold;
+                game.wood -= tech.cost.wood;
+                game.tech[tech.id] = true;
+                sound.play('complete');
+                game.showMessage(`${tech.name} researched!`);
+                renderTechTree();
+            };
+        }
+
+        grid.appendChild(item);
+    }
+}
+
+// ============================================
+// SAVE/LOAD
+// ============================================
+function saveGame() {
+    const data = game.save();
+    localStorage.setItem('warcraft_save', data);
+    game.showMessage('Game saved!');
+    sound.play('complete');
+}
+
+function loadGame() {
+    const data = localStorage.getItem('warcraft_save');
+    if (data) {
+        game.load(data);
+        game.showMessage('Game loaded!');
+        sound.play('complete');
+    } else {
+        game.showMessage('No save found!');
+        sound.play('error');
+    }
+}
+
+// ============================================
+// START GAME
+// ============================================
+let game;
+window.onload = () => {
+    game = new Game();
+};
+    </script>
+</body>
+</html>
