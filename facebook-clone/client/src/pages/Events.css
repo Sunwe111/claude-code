@@ -1,0 +1,168 @@
+.events-page {
+  display: flex;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.events-sidebar {
+  width: 360px;
+  padding: 16px;
+  position: sticky;
+  top: 72px;
+  height: fit-content;
+}
+
+.events-sidebar h1 {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+.events-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.events-nav .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.events-nav .nav-item:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.events-nav .nav-item.active {
+  background-color: #e7f3ff;
+  color: var(--fb-blue);
+}
+
+.events-content {
+  flex: 1;
+}
+
+.events-content h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.event-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  position: relative;
+}
+
+.event-date-badge {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: center;
+  box-shadow: var(--fb-shadow);
+  z-index: 1;
+}
+
+.event-date-badge .month {
+  font-size: 12px;
+  color: var(--fb-red);
+  text-transform: uppercase;
+  display: block;
+}
+
+.event-date-badge .day {
+  font-size: 24px;
+  font-weight: 700;
+  display: block;
+}
+
+.event-cover {
+  width: 200px;
+  height: 150px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.event-info {
+  flex: 1;
+}
+
+.event-time {
+  color: var(--fb-red);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.event-info h3 {
+  font-size: 20px;
+  margin: 4px 0;
+}
+
+.event-location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fb-text-secondary);
+  margin-bottom: 8px;
+}
+
+.event-stats {
+  color: var(--fb-text-secondary);
+  font-size: 14px;
+}
+
+.event-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  color: var(--fb-gray-medium);
+  margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+  .events-page {
+    flex-direction: column;
+  }
+
+  .events-sidebar {
+    width: 100%;
+    position: static;
+  }
+
+  .event-card {
+    flex-direction: column;
+  }
+
+  .event-cover {
+    width: 100%;
+    height: 200px;
+  }
+}

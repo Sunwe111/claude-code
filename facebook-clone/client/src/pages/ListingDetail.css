@@ -1,0 +1,202 @@
+.listing-detail {
+  display: flex;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.listing-gallery {
+  width: 500px;
+  flex-shrink: 0;
+}
+
+.main-image {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--fb-gray-light);
+  margin-bottom: 8px;
+}
+
+.main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumbnail-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.thumbnail {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+.thumbnail.active {
+  border-color: var(--fb-blue);
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.listing-content {
+  flex: 1;
+}
+
+.listing-main {
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.listing-header {
+  margin-bottom: 16px;
+}
+
+.listing-header h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.listing-price {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.listing-meta {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  color: var(--fb-text-secondary);
+  font-size: 15px;
+}
+
+.listing-meta span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.condition {
+  background-color: var(--fb-gray-light);
+  padding: 4px 12px;
+  border-radius: 16px;
+  text-transform: capitalize;
+}
+
+.listing-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.listing-actions .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.listing-actions .btn.saved {
+  color: var(--fb-red);
+}
+
+.listing-description {
+  margin-bottom: 24px;
+}
+
+.listing-description h2 {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+
+.listing-description p {
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.listing-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background-color: var(--fb-gray-light);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.seller-info {
+  padding: 24px;
+}
+
+.seller-info h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+}
+
+.seller-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.seller-profile:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+.seller-profile img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.seller-name {
+  font-weight: 600;
+  display: block;
+}
+
+.seller-joined {
+  font-size: 14px;
+  color: var(--fb-text-secondary);
+}
+
+.seller-stats .stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.seller-stats .stat:hover {
+  background-color: var(--fb-hover-bg);
+}
+
+@media (max-width: 900px) {
+  .listing-detail {
+    flex-direction: column;
+  }
+
+  .listing-gallery {
+    width: 100%;
+  }
+}
