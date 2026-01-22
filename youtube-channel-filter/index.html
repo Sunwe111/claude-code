@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Channel Filter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-mode">
+    <div class="container">
+        <!-- Filter Sidebar -->
+        <aside class="filter-sidebar">
+            <div class="filter-header">
+                <svg class="filter-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                <h2>Filter</h2>
+            </div>
+
+            <!-- Views Range Filter -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Views Range
+                    <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="filter-content">
+                    <div class="range-slider">
+                        <div class="slider-track"></div>
+                        <input type="range" id="viewsMin" min="0" max="1000000" value="0" step="1000">
+                        <input type="range" id="viewsMax" min="0" max="1000000" value="1000000" step="1000">
+                    </div>
+                    <div class="range-inputs">
+                        <input type="number" id="viewsMinInput" value="0" placeholder="Min">
+                        <input type="number" id="viewsMaxInput" value="1000000" placeholder="Max">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Filter -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Časové obdobie
+                    <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="filter-content">
+                    <select id="timeFilter">
+                        <option value="7">Posledný týždeň</option>
+                        <option value="30" selected>Posledný mesiac</option>
+                        <option value="60">Posledné 2 mesiace</option>
+                        <option value="90">Posledné 3 mesiace</option>
+                        <option value="120">Posledné 4 mesiace</option>
+                        <option value="150">Posledných 5 mesiacov</option>
+                        <option value="180">Posledných 6 mesiacov</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Duration Filter -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Dĺžka videa
+                    <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="filter-content">
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="short" checked>
+                        <span>Short (< 1 min)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="medium-short" checked>
+                        <span>Krátke (1-5 min)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="medium" checked>
+                        <span>Stredné (5-20 min)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="long" checked>
+                        <span>Dlhé (20-60 min)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="extra-long" checked>
+                        <span>Extra dlhé (60+ min)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Comments Filter -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Minimum komentárov
+                    <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="filter-content">
+                    <input type="number" id="minComments" value="0" min="0" placeholder="Minimálny počet komentárov">
+                </div>
+            </div>
+
+            <!-- Keyword Search -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Vyhľadávanie
+                    <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="filter-content">
+                    <input type="text" id="keywordSearch" placeholder="Hľadať v názvoch videí...">
+                </div>
+            </div>
+
+            <!-- Sort -->
+            <div class="filter-section">
+                <div class="filter-title">
+                    Zoradenie
+                    <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <div class="filter-content">
+                    <select id="sortBy">
+                        <option value="views-desc">Najviac videní</option>
+                        <option value="views-asc">Najmenej videní</option>
+                        <option value="date-desc">Najnovšie</option>
+                        <option value="date-asc">Najstaršie</option>
+                        <option value="duration-desc">Najdlhšie</option>
+                        <option value="duration-asc">Najkratšie</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="resetFilters" class="reset-btn">Resetovať filtre</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header">
+                <h1>YouTube Channel Performance Research</h1>
+                <button id="themeToggle" class="theme-toggle">
+                    <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="search-section">
+                <div class="channel-input-wrapper">
+                    <input type="text" id="channelUrl" placeholder="Zadaj URL alebo ID YouTube kanála..." autocomplete="off">
+                    <button id="loadChannel" class="load-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Načítať kanál
+                    </button>
+                </div>
+            </div>
+
+            <div id="channelInfo" class="channel-info" style="display: none;">
+                <img id="channelThumbnail" src="" alt="Channel">
+                <div class="channel-details">
+                    <h3 id="channelTitle"></h3>
+                    <p id="channelStats"></p>
+                </div>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Načítavam videá...</p>
+            </div>
+
+            <div id="results" class="results-info" style="display: none;">
+                <p>Nájdených videí: <strong id="videoCount">0</strong></p>
+            </div>
+
+            <div id="videosGrid" class="videos-grid"></div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
