@@ -145,12 +145,6 @@ async function loadChannel() {
         return;
     }
 
-    const channelId = extractChannelId(input);
-    if (!channelId) {
-        alert('Neplatný formát. Použite URL kanála alebo ID kanála.');
-        return;
-    }
-
     loading.style.display = 'block';
     channelInfo.style.display = 'none';
     results.style.display = 'none';
@@ -158,6 +152,28 @@ async function loadChannel() {
     allVideos = [];
 
     try {
+        // Extract channel identifier
+        const { type, value } = extractChannelId(input);
+        let channelId = null;
+
+        // If it's a handle/username, search for the channel first
+        if (type === 'handle' || type === 'username') {
+            const searchQuery = type === 'handle' ? value : value;
+            const searchResponse = await fetch(
+                `${API_BASE_URL}/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&key=${API_KEY}&maxResults=1`
+            );
+            const searchData = await searchResponse.json();
+
+            if (!searchData.items || searchData.items.length === 0) {
+                throw new Error('Kanál nenájdený');
+            }
+
+            channelId = searchData.items[0].id.channelId;
+        } else {
+            // It's already a channel ID
+            channelId = value;
+        }
+
         // Fetch Channel Info
         const channelResponse = await fetch(
             `${API_BASE_URL}/channels?part=snippet,statistics&id=${channelId}&key=${API_KEY}`
@@ -188,30 +204,40 @@ async function loadChannel() {
 function extractChannelId(input) {
     // Direct channel ID
     if (input.match(/^UC[\w-]{22}$/)) {
-        return input;
+        return { type: 'channelId', value: input };
     }
 
-    // URL patterns
-    const patterns = [
-        /youtube\.com\/channel\/(UC[\w-]{22})/,
-        /youtube\.com\/@([\w-]+)/,
-        /youtube\.com\/c\/([\w-]+)/,
-        /youtube\.com\/user\/([\w-]+)/
-    ];
+    // Channel URL with ID
+    const channelIdMatch = input.match(/youtube\.com\/channel\/(UC[\w-]{22})/);
+    if (channelIdMatch) {
+        return { type: 'channelId', value: channelIdMatch[1] };
+    }
 
-    for (const pattern of patterns) {
-        const match = input.match(pattern);
-        if (match) {
-            // If it's a @username or /c/ or /user/, we need to search for the channel
-            if (pattern.toString().includes('@') || pattern.toString().includes('/c/') || pattern.toString().includes('/user/')) {
-                return match[1]; // Return the handle, we'll search for it
-            }
-            return match[1];
-        }
+    // @handle format
+    const handleMatch = input.match(/youtube\.com\/@([\w-]+)/);
+    if (handleMatch) {
+        return { type: 'handle', value: handleMatch[1] };
+    }
+
+    // /c/ custom URL
+    const customMatch = input.match(/youtube\.com\/c\/([\w-]+)/);
+    if (customMatch) {
+        return { type: 'username', value: customMatch[1] };
+    }
+
+    // /user/ username
+    const userMatch = input.match(/youtube\.com\/user\/([\w-]+)/);
+    if (userMatch) {
+        return { type: 'username', value: userMatch[1] };
+    }
+
+    // If starts with @, treat as handle
+    if (input.startsWith('@')) {
+        return { type: 'handle', value: input.substring(1) };
     }
 
     // Try to use it as a handle/username
-    return input;
+    return { type: 'username', value: input };
 }
 
 async function fetchAllVideos(channelId) {
