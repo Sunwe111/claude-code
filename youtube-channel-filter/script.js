@@ -223,15 +223,25 @@ async function fetchAllVideos(channelId) {
         const url = `${API_BASE_URL}/search?key=${API_KEY}&channelId=${channelId}&part=snippet&type=video&maxResults=${maxResults}&order=date${nextPageToken ? '&pageToken=' + nextPageToken : ''}`;
         console.log('Fetching videos:', url);
 
+        // Update loading text with progress
+        const loadingText = document.querySelector('.loading p');
+        if (loadingText) {
+            loadingText.textContent = `Načítavam videá... (${allVideos.length} načítaných)`;
+        }
+
         const response = await fetch(url);
         const data = await response.json();
         console.log('Videos response:', data);
 
         if (data.error) {
+            console.error('API Error:', data.error);
             throw new Error(`API Error: ${data.error.message}`);
         }
 
-        if (!data.items) break;
+        if (!data.items || data.items.length === 0) {
+            console.log('No more videos found');
+            break;
+        }
 
         const videoIds = data.items.map(item => item.id.videoId).join(',');
 
@@ -241,9 +251,14 @@ async function fetchAllVideos(channelId) {
         );
         const statsData = await statsResponse.json();
 
+        if (statsData.error) {
+            console.error('Stats API Error:', statsData.error);
+            throw new Error(`Stats API Error: ${statsData.error.message}`);
+        }
+
         // Combine search results with statistics
         const videos = data.items.map(item => {
-            const stats = statsData.items.find(v => v.id === item.id.videoId);
+            const stats = statsData.items?.find(v => v.id === item.id.videoId);
             return {
                 id: item.id.videoId,
                 title: item.snippet.title,
@@ -259,10 +274,21 @@ async function fetchAllVideos(channelId) {
         allVideos = [...allVideos, ...videos];
         nextPageToken = data.nextPageToken;
 
-        // Limit to reasonable number to avoid quota issues
-        if (allVideos.length >= 200) break;
+        console.log(`Loaded ${allVideos.length} videos so far, nextPageToken: ${nextPageToken}`);
+
+        // Limit to 500 videos to avoid excessive API quota usage
+        // Each page costs quota, so we need to balance completeness vs cost
+        if (allVideos.length >= 500) {
+            console.log('Reached 500 video limit');
+            break;
+        }
+
+        // Small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
 
     } while (nextPageToken);
+
+    console.log(`Finished loading ${allVideos.length} total videos`);
 }
 
 function parseDuration(duration) {
@@ -298,32 +324,35 @@ function displayChannelInfo(channel) {
 function applyFilters() {
     if (allVideos.length === 0) return;
 
-    console.log('Applying filters...');
+    console.log('Applying filters to', allVideos.length, 'videos');
+
+    const minViews = parseInt(viewsMinInput.value) || 0;
+    const maxViews = parseInt(viewsMaxInput.value) || 999999999;
+    const daysAgo = parseInt(timeFilter.value);
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+
+    const selectedDurations = [];
+    document.querySelectorAll('.filter-content input[type="checkbox"]:checked').forEach(checkbox => {
+        selectedDurations.push(checkbox.value);
+    });
+
+    const minCommentsValue = parseInt(minComments.value) || 0;
+    const keyword = keywordSearch.value.toLowerCase().trim();
+
+    console.log('Filter criteria:', { minViews, maxViews, daysAgo, cutoffDate, selectedDurations, minCommentsValue, keyword });
 
     filteredVideos = allVideos.filter(video => {
         // Views Filter
-        const minViews = parseInt(viewsMinInput.value) || 0;
-        const maxViews = parseInt(viewsMaxInput.value) || 999999999;
-
-        console.log(`Video: ${video.title}, Views: ${video.views}, Min: ${minViews}, Max: ${maxViews}`);
-
         if (video.views < minViews || video.views > maxViews) {
-            console.log(`Filtered out by views: ${video.title}`);
             return false;
         }
 
         // Time Filter
-        const daysAgo = parseInt(timeFilter.value);
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
         if (video.publishedAt < cutoffDate) return false;
 
         // Duration Filter
-        const selectedDurations = [];
-        document.querySelectorAll('.filter-content input[type="checkbox"]:checked').forEach(checkbox => {
-            selectedDurations.push(checkbox.value);
-        });
-
         if (selectedDurations.length > 0) {
             let matchesDuration = false;
 
@@ -337,11 +366,9 @@ function applyFilters() {
         }
 
         // Comments Filter
-        const minCommentsValue = parseInt(minComments.value) || 0;
         if (video.comments < minCommentsValue) return false;
 
         // Keyword Search
-        const keyword = keywordSearch.value.toLowerCase().trim();
         if (keyword && !video.title.toLowerCase().includes(keyword)) return false;
 
         return true;
@@ -367,6 +394,8 @@ function applyFilters() {
                 return 0;
         }
     });
+
+    console.log(`Filtered: ${filteredVideos.length} videos out of ${allVideos.length} total`);
 
     displayVideos();
 }
