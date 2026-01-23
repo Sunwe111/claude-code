@@ -20,20 +20,21 @@
             <!-- Views Range Filter -->
             <div class="filter-section">
                 <div class="filter-title">
-                    Views Range
+                    Rozsah videní
                     <svg class="dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                 </div>
                 <div class="filter-content">
-                    <div class="range-slider">
-                        <div class="slider-track"></div>
-                        <input type="range" id="viewsMin" min="0" max="1000000" value="0" step="1000">
-                        <input type="range" id="viewsMax" min="0" max="1000000" value="1000000" step="1000">
-                    </div>
-                    <div class="range-inputs">
-                        <input type="number" id="viewsMinInput" value="0" placeholder="Min">
-                        <input type="number" id="viewsMaxInput" value="1000000" placeholder="Max">
+                    <div class="simple-inputs">
+                        <div class="input-group">
+                            <label>Minimum</label>
+                            <input type="number" id="viewsMinInput" value="0" placeholder="0" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label>Maximum</label>
+                            <input type="number" id="viewsMaxInput" value="999999999" placeholder="Neobmedzené" min="0">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -55,6 +56,9 @@
                         <option value="120">Posledné 4 mesiace</option>
                         <option value="150">Posledných 5 mesiacov</option>
                         <option value="180">Posledných 6 mesiacov</option>
+                        <option value="365">Posledný rok</option>
+                        <option value="730">Posledné 2 roky</option>
+                        <option value="99999">Celý čas</option>
                     </select>
                 </div>
             </div>

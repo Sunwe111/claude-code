@@ -22,8 +22,6 @@ const themeToggle = document.getElementById('themeToggle');
 const resetFiltersBtn = document.getElementById('resetFilters');
 
 // Filter Elements
-const viewsMinSlider = document.getElementById('viewsMin');
-const viewsMaxSlider = document.getElementById('viewsMax');
 const viewsMinInput = document.getElementById('viewsMinInput');
 const viewsMaxInput = document.getElementById('viewsMaxInput');
 const timeFilter = document.getElementById('timeFilter');
@@ -34,7 +32,6 @@ const sortBy = document.getElementById('sortBy');
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
-    updateSliderValues();
 });
 
 function setupEventListeners() {
@@ -47,40 +44,9 @@ function setupEventListeners() {
         if (e.key === 'Enter') loadChannel();
     });
 
-    // Range Sliders
-    viewsMinSlider.addEventListener('input', () => {
-        if (parseInt(viewsMinSlider.value) > parseInt(viewsMaxSlider.value)) {
-            viewsMinSlider.value = viewsMaxSlider.value;
-        }
-        updateSliderValues();
-        applyFilters();
-    });
-
-    viewsMaxSlider.addEventListener('input', () => {
-        if (parseInt(viewsMaxSlider.value) < parseInt(viewsMinSlider.value)) {
-            viewsMaxSlider.value = viewsMinSlider.value;
-        }
-        updateSliderValues();
-        applyFilters();
-    });
-
-    viewsMinInput.addEventListener('change', () => {
-        viewsMinSlider.value = viewsMinInput.value;
-        if (parseInt(viewsMinSlider.value) > parseInt(viewsMaxSlider.value)) {
-            viewsMinSlider.value = viewsMaxSlider.value;
-            viewsMinInput.value = viewsMaxSlider.value;
-        }
-        applyFilters();
-    });
-
-    viewsMaxInput.addEventListener('change', () => {
-        viewsMaxSlider.value = viewsMaxInput.value;
-        if (parseInt(viewsMaxSlider.value) < parseInt(viewsMinSlider.value)) {
-            viewsMaxSlider.value = viewsMinSlider.value;
-            viewsMaxInput.value = viewsMinSlider.value;
-        }
-        applyFilters();
-    });
+    // Views Input Fields
+    viewsMinInput.addEventListener('input', applyFilters);
+    viewsMaxInput.addEventListener('input', applyFilters);
 
     // Other Filters
     timeFilter.addEventListener('change', applyFilters);
@@ -117,15 +83,9 @@ function toggleTheme() {
     document.body.classList.toggle('dark-mode');
 }
 
-function updateSliderValues() {
-    viewsMinInput.value = viewsMinSlider.value;
-    viewsMaxInput.value = viewsMaxSlider.value;
-}
-
 function resetFilters() {
-    viewsMinSlider.value = 0;
-    viewsMaxSlider.value = 1000000;
-    updateSliderValues();
+    viewsMinInput.value = 0;
+    viewsMaxInput.value = 999999999;
     timeFilter.value = '30';
     minComments.value = 0;
     keywordSearch.value = '';
@@ -338,11 +298,19 @@ function displayChannelInfo(channel) {
 function applyFilters() {
     if (allVideos.length === 0) return;
 
+    console.log('Applying filters...');
+
     filteredVideos = allVideos.filter(video => {
         // Views Filter
-        const minViews = parseInt(viewsMinSlider.value);
-        const maxViews = parseInt(viewsMaxSlider.value);
-        if (video.views < minViews || video.views > maxViews) return false;
+        const minViews = parseInt(viewsMinInput.value) || 0;
+        const maxViews = parseInt(viewsMaxInput.value) || 999999999;
+
+        console.log(`Video: ${video.title}, Views: ${video.views}, Min: ${minViews}, Max: ${maxViews}`);
+
+        if (video.views < minViews || video.views > maxViews) {
+            console.log(`Filtered out by views: ${video.title}`);
+            return false;
+        }
 
         // Time Filter
         const daysAgo = parseInt(timeFilter.value);
