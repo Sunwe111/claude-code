@@ -1,5 +1,5 @@
 // YouTube API Configuration
-const API_KEY = 'AIzaSyAuL0XA_QpttkiaCc-0VzAvGvoDlpVxfEw';
+const API_KEY = 'AIzaSyBfHB3j8MSYlZ2jALaMdl3Kc7PK4uNCAJo';
 const API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
 // State
@@ -154,34 +154,49 @@ async function loadChannel() {
     try {
         // Extract channel identifier
         const { type, value } = extractChannelId(input);
+        console.log('Extracted:', { type, value });
         let channelId = null;
 
         // If it's a handle/username, search for the channel first
         if (type === 'handle' || type === 'username') {
             const searchQuery = type === 'handle' ? value : value;
-            const searchResponse = await fetch(
-                `${API_BASE_URL}/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&key=${API_KEY}&maxResults=1`
-            );
+            const searchUrl = `${API_BASE_URL}/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&key=${API_KEY}&maxResults=1`;
+            console.log('Searching for channel:', searchUrl);
+
+            const searchResponse = await fetch(searchUrl);
             const searchData = await searchResponse.json();
+            console.log('Search response:', searchData);
+
+            if (searchData.error) {
+                throw new Error(`API Error: ${searchData.error.message}`);
+            }
 
             if (!searchData.items || searchData.items.length === 0) {
-                throw new Error('Kanál nenájdený');
+                throw new Error('Kanál nenájdený. Skús použiť priamy channel ID.');
             }
 
             channelId = searchData.items[0].id.channelId;
+            console.log('Found channel ID:', channelId);
         } else {
             // It's already a channel ID
             channelId = value;
+            console.log('Using direct channel ID:', channelId);
         }
 
         // Fetch Channel Info
-        const channelResponse = await fetch(
-            `${API_BASE_URL}/channels?part=snippet,statistics&id=${channelId}&key=${API_KEY}`
-        );
+        const channelUrl = `${API_BASE_URL}/channels?part=snippet,statistics&id=${channelId}&key=${API_KEY}`;
+        console.log('Fetching channel info:', channelUrl);
+
+        const channelResponse = await fetch(channelUrl);
         const channelData = await channelResponse.json();
+        console.log('Channel response:', channelData);
+
+        if (channelData.error) {
+            throw new Error(`API Error: ${channelData.error.message}`);
+        }
 
         if (!channelData.items || channelData.items.length === 0) {
-            throw new Error('Kanál nenájdený');
+            throw new Error('Kanál nenájdený. Overte že URL je správne.');
         }
 
         currentChannel = channelData.items[0];
@@ -195,7 +210,7 @@ async function loadChannel() {
 
         applyFilters();
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error details:', error);
         loading.style.display = 'none';
         alert('Chyba pri načítavaní kanála: ' + error.message);
     }
@@ -246,9 +261,15 @@ async function fetchAllVideos(channelId) {
 
     do {
         const url = `${API_BASE_URL}/search?key=${API_KEY}&channelId=${channelId}&part=snippet&type=video&maxResults=${maxResults}&order=date${nextPageToken ? '&pageToken=' + nextPageToken : ''}`;
+        console.log('Fetching videos:', url);
 
         const response = await fetch(url);
         const data = await response.json();
+        console.log('Videos response:', data);
+
+        if (data.error) {
+            throw new Error(`API Error: ${data.error.message}`);
+        }
 
         if (!data.items) break;
 
