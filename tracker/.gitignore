@@ -1,0 +1,10 @@
+.env
+cache/*
+!cache/.gitkeep
+out/*
+!out/.gitkeep
+*.sqlite
+*.sqlite3
+__pycache__/
+.pytest_cache/
+.venv/

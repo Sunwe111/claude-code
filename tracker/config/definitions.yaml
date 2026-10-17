@@ -1,0 +1,71 @@
+# Definitions used everywhere in the pipeline and on the site.
+# Change values here, not in code. Every label-deciding rule reads from this file.
+
+active_listing:
+  property_types: [single_family, condo, townhome, multi_family_2_4]
+  min_units: 1
+  max_units: 4
+  snapshot_frequency: weekly
+
+prior_purchase:
+  # Most recent arm's-length sale deed recorded for the parcel.
+  primary_window_months: 36
+  report_windows_months: [12, 24, 36]
+
+open_lien:
+  lien_doc_types: [mortgage, deed_of_trust, heloc, credit_line_deed_of_trust]
+  release_doc_types: [reconveyance, satisfaction, release]
+  # Liens younger than this are flagged "possibly closed" because
+  # reconveyances can be recorded weeks or months after payoff.
+  possibly_closed_days: 90
+
+classification:
+  labels: [fixed, arm, heloc_variable, other_variable, unknown]
+  confidence_levels: [high, medium, low]
+  # Only these confidence levels feed headline numbers.
+  headline_confidence: [high, medium]
+  # unknown is never counted as fixed.
+  treat_unknown_as_fixed: false
+  heloc_doc_title_patterns:
+    - "CREDIT LINE DEED OF TRUST"
+    - "HOME EQUITY LINE OF CREDIT"
+    - "REVOLVING CREDIT"
+  ocr_phrases:
+    - "Adjustable Rate Rider"
+    - "Adjustable Rate Note"
+    - "Interest Rate Change Date"
+    - "maximum credit"
+    - "line of credit"
+  ocr_index_names: [SOFR, Prime, Treasury, LIBOR]
+  heuristic_heloc:
+    lien_position: 2
+    max_days_after_purchase: 365
+    round_amount_multiple: 5000
+
+exclusions:
+  # Excluded from quick-resale figures and counted separately.
+  new_construction_builder: true
+  distressed: [foreclosure, reo, short_sale]
+  non_arms_length: [quitclaim, intrafamily, nominal_consideration, trust_transfer]
+  nominal_price_max_usd: 100
+  investor_flip:
+    buyer_types: [llc, corporation, trust]
+    max_hold_months: 12
+    report_as_own_category: true
+
+baseline:
+  same_county: true
+  same_purchase_years: true
+  hmda_filters:
+    action_taken: 1          # originated
+    loan_purpose: 1          # home purchase
+    lien_status: 1           # first lien
+    occupancy_type: 1        # principal residence
+    total_units: ["1", "2", "3", "4"]
+
+stats:
+  ci_method: wilson
+  ci_level: 0.95
+
+privacy:
+  min_properties_per_public_figure: 10

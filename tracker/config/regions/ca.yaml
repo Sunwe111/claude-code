@@ -1,0 +1,97 @@
+# California: counties, batches, providers and local quirks.
+# Batches are ordered largest first. The order uses 2020-census population
+# as a stand-in until provider coverage data gives real listing volumes;
+# re-rank by listing volume at Phase 6 step 1.
+# Coverage fields stay null until the Phase 6 coverage check fills them.
+
+state: CA
+state_fips: "06"
+recording_system: deed_of_trust   # liens are deeds of trust, releases are reconveyances
+non_disclosure: false             # sale prices are generally available (documentary transfer tax)
+
+doc_type_map:
+  lien: ["DEED OF TRUST", "TRUST DEED", "MORTGAGE"]
+  heloc: ["CREDIT LINE DEED OF TRUST", "HOME EQUITY LINE OF CREDIT", "REVOLVING CREDIT DEED OF TRUST"]
+  release: ["RECONVEYANCE", "FULL RECONVEYANCE", "SUBSTITUTION OF TRUSTEE AND FULL RECONVEYANCE"]
+  quitclaim: ["QUITCLAIM DEED"]
+  sale: ["GRANT DEED", "CORPORATION GRANT DEED"]
+  distressed: ["TRUSTEE'S DEED UPON SALE", "NOTICE OF DEFAULT", "NOTICE OF TRUSTEE'S SALE"]
+
+providers:
+  listings: null      # decided at Checkpoint 0
+  records: null       # decided at Checkpoint 0
+  baseline: hmda
+  geocoder: census
+
+pilot_county: null    # decided at Checkpoint 0
+
+batches:
+  1:
+    - {fips: "06037", name: Los Angeles}
+    - {fips: "06073", name: San Diego}
+    - {fips: "06059", name: Orange}
+    - {fips: "06065", name: Riverside}
+    - {fips: "06071", name: San Bernardino}
+    - {fips: "06085", name: Santa Clara}
+    - {fips: "06001", name: Alameda}
+    - {fips: "06067", name: Sacramento}
+    - {fips: "06013", name: Contra Costa}
+    - {fips: "06019", name: Fresno}
+  2:
+    - {fips: "06029", name: Kern}
+    - {fips: "06111", name: Ventura}
+    - {fips: "06075", name: San Francisco}
+    - {fips: "06077", name: San Joaquin}
+    - {fips: "06081", name: San Mateo}
+    - {fips: "06099", name: Stanislaus}
+    - {fips: "06097", name: Sonoma}
+    - {fips: "06107", name: Tulare}
+    - {fips: "06095", name: Solano}
+    - {fips: "06083", name: Santa Barbara}
+  3:
+    - {fips: "06053", name: Monterey}
+    - {fips: "06061", name: Placer}
+    - {fips: "06079", name: San Luis Obispo}
+    - {fips: "06047", name: Merced}
+    - {fips: "06087", name: Santa Cruz}
+    - {fips: "06041", name: Marin}
+    - {fips: "06113", name: Yolo}
+    - {fips: "06007", name: Butte}
+    - {fips: "06017", name: El Dorado}
+    - {fips: "06089", name: Shasta}
+  4:
+    - {fips: "06025", name: Imperial}
+    - {fips: "06039", name: Madera}
+    - {fips: "06031", name: Kings}
+    - {fips: "06055", name: Napa}
+    - {fips: "06023", name: Humboldt}
+    - {fips: "06057", name: Nevada}
+    - {fips: "06101", name: Sutter}
+    - {fips: "06045", name: Mendocino}
+    - {fips: "06115", name: Yuba}
+    - {fips: "06033", name: Lake}
+  5:
+    - {fips: "06069", name: San Benito}
+    - {fips: "06103", name: Tehama}
+    - {fips: "06109", name: Tuolumne}
+    - {fips: "06009", name: Calaveras}
+    - {fips: "06093", name: Siskiyou}
+    - {fips: "06005", name: Amador}
+    - {fips: "06035", name: Lassen}
+    - {fips: "06021", name: Glenn}
+    - {fips: "06015", name: Del Norte}
+    - {fips: "06011", name: Colusa}
+  6:
+    - {fips: "06063", name: Plumas}
+    - {fips: "06027", name: Inyo}
+    - {fips: "06043", name: Mariposa}
+    - {fips: "06105", name: Trinity}
+    - {fips: "06051", name: Mono}
+    - {fips: "06049", name: Modoc}
+    - {fips: "06091", name: Sierra}
+    - {fips: "06003", name: Alpine}
+
+# Filled in at Phase 6 step 1, one entry per county:
+# coverage:
+#   "06037": {recorder_start: null, listings_available: null, loan_type_fill_rate: null, status: null}
+coverage: {}

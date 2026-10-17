@@ -1,0 +1,5 @@
+# Monthly spending cap for paid data APIs, in US dollars.
+# The pipeline stops a run once 80% of this is used.
+# 0 means "no paid calls allowed" — the owner sets a real number at Checkpoint 0.
+monthly_cap_usd: 0
+halt_at_fraction: 0.80
